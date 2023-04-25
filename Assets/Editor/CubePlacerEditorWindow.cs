@@ -107,11 +107,14 @@ public class CubePlacerEditorWindow : EditorWindow
     }
     private static T EditPropertyWithUndo<T>(string label, T currentValue, Action<T> setValue, Func<string, T, T> drawField, UnityEngine.Object undoRecordObject, float spaceBetweenLabelAndField)
     {
+        Color origin = GUI.color;
         EditorGUI.BeginChangeCheck();
         EditorGUILayout.BeginHorizontal();
+        GUI.color = Color.white;
         EditorGUILayout.LabelField(label, GUILayout.Width(EditorGUIUtility.labelWidth - spaceBetweenLabelAndField));
         T newValue = drawField("", currentValue);
         EditorGUILayout.EndHorizontal();
+        GUI.color = origin;
 
         if (EditorGUI.EndChangeCheck())
         {
@@ -207,17 +210,37 @@ public class CubePlacerEditorWindow : EditorWindow
         GUILayout.Label("브러쉬 효과", EditorStyles.boldLabel);
 
         GUILayout.Space(10);
-        EditorGUILayout.BeginVertical();
+
+        // 현재 GUI 색상 저장
+        Color originalColor = GUI.color;
+
+ 
+
+        GUILayout.BeginHorizontal();
         CubePlacerEditor.ED.RotatorEnabled = EditPropertyWithUndo("회전", CubePlacerEditor.ED.RotatorEnabled, enbled => CubePlacerEditor.ED.RotatorEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CubePlacerEditor.ED, 120f);
-      
+        GUILayout.EndHorizontal();
+
+        DrawWhiteSeparatorLine(5, 1.7f);
+
         if (CubePlacerEditor.ED.RotatorEnabled)
         {
-            CubePlacerEditor.ED.RotSpeed = EditPropertyWithUndo("속도", CubePlacerEditor.ED.RotSpeed, speed => CubePlacerEditor.ED.RotSpeed = speed, (label, value) => EditorGUILayout.FloatField(label, value), CubePlacerEditor.ED, 120f);
+            EditorGUILayout.BeginVertical(LayerStyle.SetToggleBoxStyle());
+
+            CubePlacerEditor.ED.Random_RotSpeed = EditPropertyWithUndo("속도", CubePlacerEditor.ED.Random_RotSpeed, speed => CubePlacerEditor.ED.Random_RotSpeed = speed, (label, value) => EditorGUILayout.FloatField(label, value ), CubePlacerEditor.ED, 120f);
+     
+            EditorGUILayout.EndVertical();
+            DrawWhiteSeparatorLine(0, 1.7f);
         }
-        EditorGUILayout.EndVertical();
+
+       
+        GUI.color = originalColor;
+
+
         GUILayout.Space(10);
 
         CubePlacerEditor.ED.MoverEnabled = EditPropertyWithUndo("이동", CubePlacerEditor.ED.MoverEnabled, enbled => CubePlacerEditor.ED.MoverEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CubePlacerEditor.ED, 120f);
+
+        DrawWhiteSeparatorLine(5, 1.7f);
 
         if (CubePlacerEditor.ED.MoverEnabled)
         {
@@ -227,38 +250,65 @@ public class CubePlacerEditorWindow : EditorWindow
 
             GUILayout.BeginHorizontal(GUI.skin.box);
 
-            EditorGUILayout.BeginVertical();
+            EditorGUILayout.BeginVertical(LayerStyle.SetToggleBoxStyle());
             CubePlacerEditor.ED.StraightEnabled = EditPropertyWithUndo("직선", CubePlacerEditor.ED.StraightEnabled, enbled => CubePlacerEditor.ED.StraightEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CubePlacerEditor.ED, 120f);
             if (CubePlacerEditor.ED.StraightEnabled)
             {
-                CubePlacerEditor.ED.MoveSpeed = EditPropertyWithUndo("속도", CubePlacerEditor.ED.MoveSpeed, speed => CubePlacerEditor.ED.MoveSpeed = speed, (label, value) => EditorGUILayout.FloatField(label, value), CubePlacerEditor.ED, 120f);
-                GUILayout.Space(10);
-                CubePlacerEditor.ED.MoveDirection = EditPropertyWithUndo("방향", CubePlacerEditor.ED.MoveDirection, direction => CubePlacerEditor.ED.MoveDirection = direction, (label, value) => (E_Direction)EditorGUILayout.EnumPopup(label, (E_Direction)value), CubePlacerEditor.ED, 120f);
+                CubePlacerEditor.ED.Straight_MoveSpeed = EditPropertyWithUndo("속도", CubePlacerEditor.ED.Straight_MoveSpeed, speed => CubePlacerEditor.ED.Straight_MoveSpeed = speed, (label, value) => EditorGUILayout.FloatField(label, value), CubePlacerEditor.ED, 120f);
+                CubePlacerEditor.ED.Straight_MoveDirection = EditPropertyWithUndo("방향", CubePlacerEditor.ED.Straight_MoveDirection, direction => CubePlacerEditor.ED.Straight_MoveDirection = direction, (label, value) => (E_Direction)EditorGUILayout.EnumPopup(label, (E_Direction)value), CubePlacerEditor.ED, 120f);
             }
             EditorGUILayout.EndVertical();
             GUILayout.Space(10);
 
-            EditorGUILayout.BeginVertical();
+            EditorGUILayout.BeginVertical(LayerStyle.SetToggleBoxStyle());
             CubePlacerEditor.ED.BlackholeEnabled = EditPropertyWithUndo("블랙홀", CubePlacerEditor.ED.BlackholeEnabled, enbled => CubePlacerEditor.ED.BlackholeEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CubePlacerEditor.ED, 110f);
             if (CubePlacerEditor.ED.BlackholeEnabled)
             {
-                CubePlacerEditor.ED.AttractionForce = EditPropertyWithUndo("속도", CubePlacerEditor.ED.AttractionForce, speed => CubePlacerEditor.ED.AttractionForce = speed, (label, value) => EditorGUILayout.FloatField(label, value), CubePlacerEditor.ED, 110f);
+                CubePlacerEditor.ED.Blackhole_AttractionForce = EditPropertyWithUndo("속도", CubePlacerEditor.ED.Blackhole_AttractionForce, speed => CubePlacerEditor.ED.Blackhole_AttractionForce = speed, (label, value) => EditorGUILayout.FloatField(label, value), CubePlacerEditor.ED, 110f);
             }
             EditorGUILayout.EndVertical();
             GUILayout.Space(10);
 
-            EditorGUILayout.BeginVertical();
+            EditorGUILayout.BeginVertical(LayerStyle.SetToggleBoxStyle());
             CubePlacerEditor.ED.SnowEnabled = EditPropertyWithUndo("눈", CubePlacerEditor.ED.SnowEnabled, enbled => CubePlacerEditor.ED.SnowEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CubePlacerEditor.ED, 130f);
             if (CubePlacerEditor.ED.SnowEnabled)
             {
-                CubePlacerEditor.ED.SwayIntensity = EditPropertyWithUndo("강도", CubePlacerEditor.ED.SwayIntensity, speed => CubePlacerEditor.ED.SwayIntensity = speed, (label, value) => EditorGUILayout.FloatField(label, value), CubePlacerEditor.ED, 120f);
-                CubePlacerEditor.ED.SwayAmount = EditPropertyWithUndo("흔들림", CubePlacerEditor.ED.SwayAmount, speed => CubePlacerEditor.ED.SwayAmount = speed, (label, value) => EditorGUILayout.FloatField(label, value), CubePlacerEditor.ED, 110f);
+                CubePlacerEditor.ED.Snow_SwayIntensity = EditPropertyWithUndo("강도", CubePlacerEditor.ED.Snow_SwayIntensity, speed => CubePlacerEditor.ED.Snow_SwayIntensity = speed, (label, value) => EditorGUILayout.FloatField(label, value), CubePlacerEditor.ED, 120f);
+                CubePlacerEditor.ED.Snow_SwayAmount = EditPropertyWithUndo("흔들림", CubePlacerEditor.ED.Snow_SwayAmount, speed => CubePlacerEditor.ED.Snow_SwayAmount = speed, (label, value) => EditorGUILayout.FloatField(label, value), CubePlacerEditor.ED, 110f);
             }
             EditorGUILayout.EndVertical();
             GUILayout.EndHorizontal();
+            GUI.color = originalColor;
 
-            CheckBrushEffectClear();
+            DrawWhiteSeparatorLine(0, 1.7f);
+
             CheckBrushEffectEnabled( prevStraightEnbled, prevBlackholeEnbled, prevSnowEnabled);
+
+        }
+
+        GUILayout.Space(10);
+
+        CubePlacerEditor.ED.NatureEnabled = EditPropertyWithUndo("자연", CubePlacerEditor.ED.NatureEnabled, enbled => CubePlacerEditor.ED.NatureEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CubePlacerEditor.ED, 120f);
+        DrawWhiteSeparatorLine(5, 1.7f);
+
+        if (CubePlacerEditor.ED.NatureEnabled)
+        {
+            GUILayout.BeginHorizontal(GUI.skin.box);
+
+            EditorGUILayout.BeginVertical(LayerStyle.SetToggleBoxStyle());
+            CubePlacerEditor.ED.SnowSpawnEnabled = EditPropertyWithUndo("눈", CubePlacerEditor.ED.SnowSpawnEnabled, enbled => CubePlacerEditor.ED.SnowSpawnEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CubePlacerEditor.ED, 120f);
+            if (CubePlacerEditor.ED.SnowSpawnEnabled)
+            {
+                CubePlacerEditor.ED.SnowSpawn_SwayIntensity = EditPropertyWithUndo("강도", CubePlacerEditor.ED.SnowSpawn_SwayIntensity, speed => CubePlacerEditor.ED.SnowSpawn_SwayIntensity = speed, (label, value) => EditorGUILayout.FloatField(label, value), CubePlacerEditor.ED, 120f);
+                CubePlacerEditor.ED.SnowSpawn_SwayAmount = EditPropertyWithUndo("흔들림", CubePlacerEditor.ED.SnowSpawn_SwayAmount, speed => CubePlacerEditor.ED.SnowSpawn_SwayAmount = speed, (label, value) => EditorGUILayout.FloatField(label, value), CubePlacerEditor.ED, 110f);
+            }
+            EditorGUILayout.EndVertical();
+            GUILayout.Space(10);
+
+            GUILayout.EndHorizontal();
+            GUI.color = originalColor;
+
+            DrawWhiteSeparatorLine(0, 1.7f);
         }
 
         GUILayout.Space(20);
@@ -375,6 +425,28 @@ public class CubePlacerEditorWindow : EditorWindow
         CubePlacerEditor.LayerStorage.EmptyLayerIds.Clear();
         CubePlacerEditor.LayerObjects.Clear();
     }
+
+    void DrawWhiteSeparatorLine(float space , float height)
+    {
+        GUILayout.Space(space);
+
+        // 새로운 GUIStyle 생성합니다.
+        GUIStyle separatorStyle = new GUIStyle(GUI.skin.box);
+        separatorStyle.normal.background = EditorGUIUtility.whiteTexture;
+
+        // 현재 GUI 색상을 저장합니다.
+        Color originalColor = GUI.color;
+        // GUI 색상을 하얀색으로 변경합니다.
+        GUI.color = new Color(0.3f, 0.3f, 0.3f, 0.5f);
+
+        // 구분선을 그립니다.
+        GUILayout.Box("", separatorStyle, GUILayout.ExpandWidth(true), GUILayout.Height(height));
+
+        // GUI 색상을 원래 색상으로 되돌립니다.
+        GUI.color = originalColor;
+    }
+
+
     private void ClickDeleteLayer(Transform layer)
     {
         int layerIndex = CubePlacerEditor.LayerObjects.FirstOrDefault(x => x.Value == layer).Key;
@@ -385,16 +457,7 @@ public class CubePlacerEditorWindow : EditorWindow
 
         Undo.DestroyObjectImmediate(layer.gameObject);
     }
-    private void CheckBrushEffectClear()
-    {
-        if (CubePlacerEditor.ED.MoverEnabled == false)
-        {
-            CubePlacerEditor.ED.StraightEnabled = false;
-            CubePlacerEditor.ED.BlackholeEnabled = false;
-            CubePlacerEditor.ED.SnowEnabled = false;
-        }
-    }
-
+ 
     private void CheckBrushEffectEnabled(bool prevStraightEnabled, bool prevBlackholeEnabled, bool prevSnowEnabled)
     {
         int cnt = 0;

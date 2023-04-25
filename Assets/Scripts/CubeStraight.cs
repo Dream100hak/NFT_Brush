@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class CubeMover : MonoBehaviour
+public class CubeStraight : MonoBehaviour
 {
     [SerializeField]
     private E_Direction _moveDirection = E_Direction.Down;

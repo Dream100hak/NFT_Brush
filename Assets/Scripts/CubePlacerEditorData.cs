@@ -8,18 +8,29 @@ public class CubePlacerEditorData : ScriptableObject
     public Color CubeColor = Color.white;
 
     public bool RotatorEnabled = false;
-
     public bool MoverEnabled = false;
+    public bool NatureEnabled = false;
 
-    public bool StraightEnabled = false; 
+    public float Random_RotSpeed = 1.0f;
+
+    public bool StraightEnabled = false;
+    public float Straight_MoveSpeed = 1.0f;
+    public E_Direction Straight_MoveDirection = E_Direction.Down;
+
     public bool BlackholeEnabled= false;
+    public float Blackhole_AttractionForce = 1.0f;
+
+
     public bool SnowEnabled = false;
+    public float Snow_SwayIntensity = 1.0f;
+    public float Snow_SwayAmount = 0.1f;
 
-    public float MoveSpeed = 1.0f;
-    public E_Direction MoveDirection = E_Direction.Down;
-    public float RotSpeed = 1.0f;
-    public float AttractionForce = 1.0f;
+    public bool SnowSpawnEnabled = false;
+    public float SnowSpawn_SwayIntensity = 1.0f;
+    public float SnowSpawn_SwayAmount = 0.1f;
 
-    public float SwayIntensity = 1.0f;
-    public float SwayAmount = 0.1f;
+
+
+
+
 }

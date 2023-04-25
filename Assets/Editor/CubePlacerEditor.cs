@@ -162,18 +162,30 @@ public class CubePlacerEditor
             cube.transform.localScale = Vector3.one * s_editorData.CubeSize;
 
             cube.GetComponent<CubeRotator>().enabled = ED.RotatorEnabled;
-            cube.GetComponent<CubeRotator>().RotationSpeed = ED.RotSpeed;
+            cube.GetComponent<CubeRotator>().RotationSpeed = ED.Random_RotSpeed;
 
-            cube.GetComponent<CubeMover>().enabled = ED.StraightEnabled;
-            cube.GetComponent<CubeMover>().MoveSpeed = ED.MoveSpeed;
-            cube.GetComponent<CubeMover>().MoveDirection = ED.MoveDirection;
+            if (ED.MoverEnabled)
+            {
+                cube.GetComponent<CubeStraight>().enabled = ED.StraightEnabled;
+                cube.GetComponent<CubeStraight>().MoveSpeed = ED.Straight_MoveSpeed;
+                cube.GetComponent<CubeStraight>().MoveDirection = ED.Straight_MoveDirection;
 
-            cube.GetComponent<CubeBlackhole>().enabled = ED.BlackholeEnabled;
-            cube.GetComponent<CubeBlackhole>().AttractionForce = ED.AttractionForce;
+                cube.GetComponent<CubeBlackhole>().enabled = ED.BlackholeEnabled;
+                cube.GetComponent<CubeBlackhole>().AttractionForce = ED.Blackhole_AttractionForce;
 
-            cube.GetComponent<CubeSnow>().enabled = ED.SnowEnabled;
-            cube.GetComponent<CubeSnow>().SwayIntensity = ED.SwayIntensity;
-            cube.GetComponent<CubeSnow>().SwayAmount = ED.SwayAmount;
+                cube.GetComponent<CubeSnow>().enabled = ED.SnowEnabled;
+                cube.GetComponent<CubeSnow>().SwayIntensity = ED.Snow_SwayIntensity;
+                cube.GetComponent<CubeSnow>().SwayAmount = ED.Snow_SwayAmount;
+            }
+
+            if(ED.NatureEnabled)
+            {
+                cube.GetComponent<SnowSpawner>().enabled = ED.SnowSpawnEnabled;
+                cube.GetComponent<SnowSpawner>().CubeSnowPrefab = s_cubePrefab;
+                cube.GetComponent<SnowSpawner>().SwayAmount = ED.SnowSpawn_SwayAmount;
+                cube.GetComponent<SnowSpawner>().SwayIntensity = ED.SnowSpawn_SwayIntensity;
+          
+            }
 
             Renderer renderer = cube.GetComponent<Renderer>();
             Material material = new Material(renderer.sharedMaterial);

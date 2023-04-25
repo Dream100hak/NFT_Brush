@@ -12,17 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5da79080e775d44990ac74f44adf415, type: 3}
   m_Name: CubePlacerEditorData
   m_EditorClassIdentifier: 
-  CubeSize: 0.5
+  CubeSize: 0.6
   PlacementDistance: 1
   CubeColor: {r: 1, g: 1, b: 1, a: 1}
   RotatorEnabled: 1
   MoverEnabled: 1
+  NatureEnabled: 1
+  Random_RotSpeed: 1
   StraightEnabled: 0
-  BlackholeEnabled: 0
-  SnowEnabled: 1
-  MoveSpeed: 3
-  MoveDirection: 2
-  RotSpeed: 2
-  AttractionForce: 1
-  SwayIntensity: 0.5
-  SwayAmount: 0.1
+  Straight_MoveSpeed: 1
+  Straight_MoveDirection: 1
+  BlackholeEnabled: 1
+  Blackhole_AttractionForce: 1
+  SnowEnabled: 0
+  Snow_SwayIntensity: 1
+  Snow_SwayAmount: 0.1
+  SnowSpawnEnabled: 1
+  SnowSpawn_SwayIntensity: 1
+  SnowSpawn_SwayAmount: 0.1

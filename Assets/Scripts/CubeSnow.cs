@@ -2,6 +2,12 @@ using UnityEngine;
 
 public class CubeSnow : MonoBehaviour
 {
+
+    private bool _destroyMode = false;
+    public bool DestroyMode { get => _destroyMode; set { _destroyMode = value; } }
+
+
+
     private E_Direction _moveDirection = E_Direction.Down;
     [SerializeField]
     private float _snowSpeed = 2.0f;
@@ -25,7 +31,7 @@ public class CubeSnow : MonoBehaviour
         _mainCamera = Camera.main;
         _noiseOffset = Random.Range(0f, 100f);
 
-        _snowSpeed = Random.Range(0.5f, 0.7f);
+        _snowSpeed = Random.Range(1.5f, 2f);
     }
 
     void Update()
@@ -48,7 +54,10 @@ public class CubeSnow : MonoBehaviour
 
         if (viewportPos.y < -0.1f)
         {
-            transform.position = _startPosition;
+            if (DestroyMode == false)
+                transform.position = _startPosition;
+            else
+                Destroy(gameObject);
         }
     }
 }
