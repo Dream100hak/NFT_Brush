@@ -14,7 +14,6 @@ public class CubePlacerEditorWindow : EditorWindow
     private Vector2 _scrollPosition = Vector2.zero; // 추가된 코드
 
     public static int s_selectedLayerIndex = -1;
-
     private bool _scrollToNewLayer = false;
     private float _layersTotalHeight;
 
@@ -31,15 +30,12 @@ public class CubePlacerEditorWindow : EditorWindow
         EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         Undo.undoRedoPerformed += OnUndoRedoPerformed;
     }
-
-
     private void OnDisable()
     {
         CubePlacerEditor.DisablePlacing();
         EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
         Undo.undoRedoPerformed -= OnUndoRedoPerformed;
     }
-
     private void OnUndoRedoPerformed()
     {
         Transform cubeParent = CubePlacerEditor.GetCubeParent();
@@ -65,7 +61,7 @@ public class CubePlacerEditorWindow : EditorWindow
             foreach (int id in destroyedLayers)
             {
                 CubePlacerEditor.ToDeleteLayerIds.Add(id);
-                CubePlacerEditor.LayerStorage.EmptyLayerIds.Add(id);
+                CubePlacerEditor.EmptyLayerIds.Add(id);
             }
         }
         else if (createdLayers.Count > 0)
@@ -73,7 +69,7 @@ public class CubePlacerEditorWindow : EditorWindow
             foreach (int id in createdLayers)
             {
                 CubePlacerEditor.ToRestoreLayerIds.Add(id, layers[id]);
-                CubePlacerEditor.LayerStorage.EmptyLayerIds.Remove(id);
+                CubePlacerEditor.EmptyLayerIds.Remove(id);
             }
         }
         Repaint();
@@ -92,15 +88,15 @@ public class CubePlacerEditorWindow : EditorWindow
         }
     }
 
-    private T EditPropertyWithUndo<T>(string label, T currentValue, Action<T> setValueAction, Func<string,T,T> drawField, UnityEngine.Object objectToRecord)
+    private T EditPropertyWithUndo<T>(string label, T currentValue, Action<T> setValueAction, Func<string,T,T> drawField, UnityEngine.Object undoRecordObject)
     {
         EditorGUI.BeginChangeCheck();
         T newValue = drawField(label, currentValue);
         if (EditorGUI.EndChangeCheck())
         {
-            Undo.RecordObject(objectToRecord, $"{label} Change");
+            Undo.RecordObject(undoRecordObject, $"{label} Change");
             setValueAction(newValue);
-            EditorUtility.SetDirty(objectToRecord);
+            EditorUtility.SetDirty(undoRecordObject);
         }
 
         return newValue;
@@ -210,11 +206,7 @@ public class CubePlacerEditorWindow : EditorWindow
         GUILayout.Label("브러쉬 효과", EditorStyles.boldLabel);
 
         GUILayout.Space(10);
-
-        // 현재 GUI 색상 저장
         Color originalColor = GUI.color;
-
- 
 
         GUILayout.BeginHorizontal();
         CubePlacerEditor.ED.RotatorEnabled = EditPropertyWithUndo("회전", CubePlacerEditor.ED.RotatorEnabled, enbled => CubePlacerEditor.ED.RotatorEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CubePlacerEditor.ED, 120f);
@@ -400,7 +392,6 @@ public class CubePlacerEditorWindow : EditorWindow
             _scrollToNewLayer = true;
         }
     }
-
     private static void CreateCanvas()
     {
         Camera main = Camera.main;
@@ -419,30 +410,35 @@ public class CubePlacerEditorWindow : EditorWindow
 
     private void ResetEditorPrefs()
     {
-        EditorPrefs.DeleteAll();
-        Debug.Log("EditorPrefs has been reset.");
-        CubePlacerEditor.LayerStorage.GenerateId = 0;
-        CubePlacerEditor.LayerStorage.EmptyLayerIds.Clear();
-        CubePlacerEditor.LayerObjects.Clear();
+        GameObject canvas = GameObject.Find("Canvas");
+
+        if (canvas != null)
+        {
+            Transform[] children = canvas.GetComponentsInChildren<Transform>();
+
+            List<Transform> targetTransforms = children.Where(child => child.gameObject != canvas && child.gameObject.name != "Cube").ToList();
+        
+            foreach (Transform target in targetTransforms)
+                Undo.DestroyObjectImmediate(target.gameObject);
+
+        }
+      
+        Debug.Log("Layers has been reset.");
+        s_selectedLayerIndex = -1;
+        CubePlacerEditor.Clear();
+        
     }
 
     void DrawWhiteSeparatorLine(float space , float height)
     {
         GUILayout.Space(space);
 
-        // 새로운 GUIStyle 생성합니다.
         GUIStyle separatorStyle = new GUIStyle(GUI.skin.box);
         separatorStyle.normal.background = EditorGUIUtility.whiteTexture;
 
-        // 현재 GUI 색상을 저장합니다.
         Color originalColor = GUI.color;
-        // GUI 색상을 하얀색으로 변경합니다.
         GUI.color = new Color(0.3f, 0.3f, 0.3f, 0.5f);
-
-        // 구분선을 그립니다.
         GUILayout.Box("", separatorStyle, GUILayout.ExpandWidth(true), GUILayout.Height(height));
-
-        // GUI 색상을 원래 색상으로 되돌립니다.
         GUI.color = originalColor;
     }
 
@@ -451,7 +447,7 @@ public class CubePlacerEditorWindow : EditorWindow
     {
         int layerIndex = CubePlacerEditor.LayerObjects.FirstOrDefault(x => x.Value == layer).Key;
         CubePlacerEditor.ToDeleteLayerIds.Add(layerIndex);
-        CubePlacerEditor.LayerStorage.EmptyLayerIds.Add(layerIndex);
+        CubePlacerEditor.EmptyLayerIds.Add(layerIndex);
 
         GUIUtility.keyboardControl = 0;
 

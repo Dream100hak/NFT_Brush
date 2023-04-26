@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ConstrainedExecution;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -9,10 +10,16 @@ using UnityEngine.SceneManagement;
 
 public class CubePlacerEditor
 {
+
+    private static SortedSet<int> s_emptyLayerIds = new SortedSet<int>();
+    public static SortedSet<int> EmptyLayerIds { get => s_emptyLayerIds; }
+
+    private static int s_generateId;
+    public static int GenerateId { get => s_generateId; set => s_generateId = value; }
+
+
     private static CubePlacerEditorData s_editorData => GetCubeData();
     public static CubePlacerEditorData ED { get => s_editorData; }
-
-    public static LayerDataStorage LayerStorage { get; set; }
     public static Dictionary<int, Transform> LayerObjects { get; set; } = new Dictionary<int, Transform>();
     public static List<int> ToDeleteLayerIds { get; set; } = new List<int>(); // 삭제 예정 아이디
     public static Dictionary<int, Transform> ToRestoreLayerIds { get; set; } = new Dictionary<int, Transform>(); // 복원 예정 아이디
@@ -36,13 +43,22 @@ public class CubePlacerEditor
     private static void RunOnceOnEditorLoad()
     {
         InitializeLayers();
-        LayerStorage = GetLayerData();
         EditorApplication.update -= RunOnceOnEditorLoad;
     }
     private static void OnSceneOpened(Scene scene, OpenSceneMode mode)
     {
-        LayerObjects.Clear();
+        Clear();
+
         InitializeLayers();
+    }
+    public static void Clear()
+    {
+        LayerObjects.Clear();
+        s_emptyLayerIds.Clear();
+        s_generateId = 0;
+        s_currentLayer = null;
+        ToDeleteLayerIds.Clear();
+        ToRestoreLayerIds.Clear();
     }
 
     public static CubePlacerEditorData GetCubeData() { return Resources.Load<CubePlacerEditorData>("Data/CubePlacerEditorData");  }
@@ -157,6 +173,7 @@ public class CubePlacerEditor
             if (target == null)
                 return;
 
+            cube.name = "Cube";
             cube.layer = LayerMask.NameToLayer("Canvas");
             cube.transform.SetParent(target);      
             cube.transform.localScale = Vector3.one * s_editorData.CubeSize;
@@ -195,17 +212,29 @@ public class CubePlacerEditor
         }
     }
 
+    public static void CubeGenerateId()
+    {
+        while(true)
+        {
+            if (LayerObjects.ContainsKey(s_generateId) == false)
+                break;
+
+            s_generateId++;       
+        }
+    }
+
     public static void CreateNewLayer()
     {
         int newLayerId;
-        if (LayerStorage.EmptyLayerIds.Count > 0)
+        if (s_emptyLayerIds.Count > 0)
         {
-            newLayerId = LayerStorage.EmptyLayerIds.First();
-            LayerStorage.EmptyLayerIds.Remove(newLayerId);
+            newLayerId = s_emptyLayerIds.First();
+            s_emptyLayerIds.Remove(newLayerId);
         }
         else
         {
-            newLayerId = LayerStorage.GenerateId++;
+            CubeGenerateId();
+            newLayerId = s_generateId;
         }
 
         GameObject newLayer = new GameObject("새 레이어 " + newLayerId.ToString("00"));

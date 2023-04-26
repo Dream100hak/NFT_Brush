@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5da79080e775d44990ac74f44adf415, type: 3}
   m_Name: CubePlacerEditorData
   m_EditorClassIdentifier: 
-  CubeSize: 0.6
-  PlacementDistance: 1
+  CubeSize: 0.832
+  PlacementDistance: 0.615
   CubeColor: {r: 1, g: 1, b: 1, a: 1}
-  RotatorEnabled: 1
-  MoverEnabled: 1
+  RotatorEnabled: 0
+  MoverEnabled: 0
   NatureEnabled: 1
   Random_RotSpeed: 1
   StraightEnabled: 0

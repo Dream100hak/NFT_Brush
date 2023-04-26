@@ -11,43 +11,43 @@ using UnityEditor;
 [CreateAssetMenu(fileName = "LayerDataStorage", menuName = "LayerDataStorage/Data", order = 1)]
 public class LayerDataStorage : ScriptableObject
 {
-    private SortedSet<int> _emptyLayerIds;
-    public SortedSet<int> EmptyLayerIds { get => _emptyLayerIds; }
+//    private SortedSet<int> _emptyLayerIds;
+//    public SortedSet<int> EmptyLayerIds { get => _emptyLayerIds; }
 
-#if UNITY_EDITOR
-    public int GenerateId
-    {
+//#if UNITY_EDITOR
+//    public int GenerateId
+//    {
 
-        get => EditorPrefs.GetInt("GenerateId", 0);
-        set => EditorPrefs.SetInt("GenerateId", value);
-    }
+//        get => EditorPrefs.GetInt("GenerateId", 0);
+//        set => EditorPrefs.SetInt("GenerateId", value);
+//    }
 
-#endif
+//#endif
 
 
-#if UNITY_EDITOR
-    private void OnEnable()
-    {
+//#if UNITY_EDITOR
+//    private void OnEnable()
+//    {
 
-        if (EditorPrefs.HasKey("EmptyLayerIds"))
-        {
-            string[] ids = EditorPrefs.GetString("EmptyLayerIds").Split(',');
-            _emptyLayerIds = new SortedSet<int>(ids.Select(s =>
-            {
-                int.TryParse(s, out int result);
-                return result;
-            }).Where(i => i != 0));
-        }
-        else
-        {
-            _emptyLayerIds = new SortedSet<int>();
-        }
+//        if (EditorPrefs.HasKey("EmptyLayerIds"))
+//        {
+//            string[] ids = EditorPrefs.GetString("EmptyLayerIds").Split(',');
+//            _emptyLayerIds = new SortedSet<int>(ids.Select(s =>
+//            {
+//                int.TryParse(s, out int result);
+//                return result;
+//            }).Where(i => i != 0));
+//        }
+//        else
+//        {
+//            _emptyLayerIds = new SortedSet<int>();
+//        }
 
-    }
+//    }
 
-    private void OnDisable()
-    {
-        EditorPrefs.SetString("EmptyLayerIds", string.Join(",", _emptyLayerIds));
-    }
-#endif
+//    private void OnDisable()
+//    {
+//        EditorPrefs.SetString("EmptyLayerIds", string.Join(",", _emptyLayerIds));
+//    }
+//#endif
 }
