@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.ConstrainedExecution;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
-public class CubePlacerEditor
+public class BrushEditor
 {
 
     private static SortedSet<int> s_emptyLayerIds = new SortedSet<int>();
@@ -16,8 +14,6 @@ public class CubePlacerEditor
 
     private static int s_generateId;
     public static int GenerateId { get => s_generateId; set => s_generateId = value; }
-
-
     private static CubePlacerEditorData s_editorData => GetCubeData();
     public static CubePlacerEditorData ED { get => s_editorData; }
     public static Dictionary<int, Transform> LayerObjects { get; set; } = new Dictionary<int, Transform>();
@@ -25,18 +21,18 @@ public class CubePlacerEditor
     public static Dictionary<int, Transform> ToRestoreLayerIds { get; set; } = new Dictionary<int, Transform>(); // 복원 예정 아이디
 
     private static bool s_isPlacing;
+    public static bool IsPlacing { get => s_isPlacing; }
     private static GameObject s_cubePrefab => GetCubePrefab();
+    public static GameObject CubePrefab { get => s_cubePrefab; }
     private static Transform s_cubeParent => GetCubeParent();
-    private static Vector3 s_lastPlacedPosition;
+    public static Transform CubeParent { get => s_cubeParent; }
 
     private static Transform s_currentLayer;
-
-    private static Vector3 s_initialMousePosition;
+    public static Transform CurrentLayer { get => s_currentLayer; set => s_currentLayer = value; }
 
     [InitializeOnLoadMethod]
     private static void Initialize()
     {
-        SceneView.duringSceneGui += OnSceneGUI;
         EditorApplication.update += RunOnceOnEditorLoad;
         EditorSceneManager.sceneOpened += OnSceneOpened;
     }
@@ -61,9 +57,7 @@ public class CubePlacerEditor
         ToRestoreLayerIds.Clear();
     }
 
-    public static CubePlacerEditorData GetCubeData() { return Resources.Load<CubePlacerEditorData>("Data/CubePlacerEditorData");  }
-    public static LayerDataStorage GetLayerData() { return Resources.Load<LayerDataStorage>("Data/LayerDataStorage"); }
-
+    public static CubePlacerEditorData GetCubeData() { return Resources.Load<CubePlacerEditorData>("Data/BrushData");  }
     private static GameObject GetCubePrefab()
     {
         var cubePlacer = UnityEngine.Object.FindObjectOfType<CubePlacer>();
@@ -89,81 +83,11 @@ public class CubePlacerEditor
             }
         }
     }
-    private static void OnSceneGUI(SceneView sceneView)
-    {
-        if (s_isPlacing && s_cubePrefab != null)
-        {
-            Vector3 mousePosition = Event.current.mousePosition;
-            mousePosition.y = sceneView.camera.pixelHeight - mousePosition.y;
-            Ray ray = sceneView.camera.ScreenPointToRay(mousePosition);
-            RaycastHit hitInfo;
-            if (Physics.Raycast(ray, out hitInfo))
-            {
-                // 쉬프트 키가 눌러져 있는지 확인
-                bool shiftPressed = Event.current.shift;
-
-                if (s_initialMousePosition != Vector3.zero)
-                {
-                    Vector3 direction = hitInfo.point - s_initialMousePosition;
-                    if (shiftPressed && Mathf.Abs(direction.x) > Mathf.Abs(direction.y) && Mathf.Abs(direction.x) > Mathf.Abs(direction.z))
-                    {
-                        hitInfo.point = new Vector3(hitInfo.point.x, s_initialMousePosition.y, s_initialMousePosition.z);
-                    }
-                    else if (shiftPressed && Mathf.Abs(direction.y) > Mathf.Abs(direction.z))
-                    {
-                        hitInfo.point = new Vector3(s_initialMousePosition.x, hitInfo.point.y, s_initialMousePosition.z);
-                    }
-                    else if (shiftPressed)
-                    {
-                        hitInfo.point = new Vector3(s_initialMousePosition.x, s_initialMousePosition.y, hitInfo.point.z);
-                    }
-                }
-                if (Event.current.type == EventType.MouseDown && Event.current.button == 0)
-                {
-
-                    PlaceCube(hitInfo.point);
-                    s_lastPlacedPosition = hitInfo.point;
-                    s_initialMousePosition = hitInfo.point;
-                    Event.current.Use();
-
-                    sceneView.Repaint();
-                }
-                else if (Event.current.type == EventType.MouseDrag && Event.current.button == 0)
-                {
-                    if (Vector3.Distance(s_lastPlacedPosition, hitInfo.point) >= s_editorData.PlacementDistance)
-                    {
-                        PlaceCube(hitInfo.point);
-                        s_lastPlacedPosition = hitInfo.point;
-                    }
-                    Event.current.Use();
-
-                    sceneView.Repaint();
-                }
-                else if (Event.current.type == EventType.MouseUp && Event.current.button == 0)
-                {
-                    s_currentLayer = null;
-                    s_initialMousePosition = Vector3.zero;
-                }
-
-                else if (Event.current.type == EventType.Layout)
-                {
-                    HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
-                }
-            }
-
-            Handles.BeginGUI();
-            Rect rect1 = new Rect(10, 10, 200, 30);
-            GUI.Label(rect1, "마우스 왼쪽 클릭 시 큐브 드로잉");
-            Rect rect2 = new Rect(10, 30, 200, 30);
-            GUI.Label(rect2, "Shift + Left Click = 수평,수직 긋기");
-            Handles.EndGUI();
-        }
-    }
-    private static void PlaceCube(Vector3 position)
+    public static void PlaceCube(Vector3 position)
     {
         Transform cubeParent = GetCubeParent();
 
-        int selectedLayerId = CubePlacerEditorWindow.s_selectedLayerIndex;
+        int selectedLayerId = LayerWindow.s_selectedLayerIndex;
 
         if (selectedLayerId >= 0)
         {
@@ -251,7 +175,7 @@ public class CubePlacerEditor
 
         Undo.RegisterCreatedObjectUndo(s_currentLayer.gameObject, "Create Layer");
 
-        CubePlacerEditorWindow.s_selectedLayerIndex = newLayerId;
+        LayerWindow.s_selectedLayerIndex = newLayerId;
     }
 
     public static void DeleteLayerIds()

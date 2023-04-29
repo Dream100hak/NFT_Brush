@@ -10,19 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e5da79080e775d44990ac74f44adf415, type: 3}
-  m_Name: CubePlacerEditorData
+  m_Name: BrushData
   m_EditorClassIdentifier: 
-  CubeSize: 0.832
-  PlacementDistance: 0.615
-  CubeColor: {r: 1, g: 1, b: 1, a: 1}
-  RotatorEnabled: 0
-  MoverEnabled: 0
+  CubeSize: 1.138
+  PlacementDistance: 1
+  CubeColor: {r: 1, g: 0, b: 0, a: 1}
+  RotatorEnabled: 1
+  MoverEnabled: 1
   NatureEnabled: 1
-  Random_RotSpeed: 1
-  StraightEnabled: 0
+  Random_RotSpeed: 3
+  StraightEnabled: 1
   Straight_MoveSpeed: 1
   Straight_MoveDirection: 1
-  BlackholeEnabled: 1
+  BlackholeEnabled: 0
   Blackhole_AttractionForce: 1
   SnowEnabled: 0
   Snow_SwayIntensity: 1
