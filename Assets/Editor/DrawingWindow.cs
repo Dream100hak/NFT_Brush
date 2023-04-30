@@ -18,16 +18,11 @@ public class DrawingWindow : EditorWindow
     [MenuItem("Photoshop/Drawing")]
     public static void ShowWindow()
     {
-        GetWindow<DrawingWindow>("Drawing");
+        GetWindow<BrushWindow>("Drawing");
     }
-    public void ShowAtPosition(Rect position)
-    {
-        var window = GetWindow<DrawingWindow>("Drawing");
-        window.position = position;
-    }
-
     private void OnEnable()
     {
+      
         _gridTexture = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Resources/Textures/Grid.png");
 
         InitializeCaptureCamera();
@@ -62,11 +57,9 @@ public class DrawingWindow : EditorWindow
         _captureCamera.cullingMask = Camera.main.cullingMask;
         _captureCamera.depth = Camera.main.depth;
 
-        // 캡처용 RenderTexture를 생성합니다.
         _renderTexture = new RenderTexture(Screen.width, Screen.height, 24, RenderTextureFormat.ARGB32);
         _renderTexture.Create();
 
-        // 카메라의 출력을 RenderTexture로 설정합니다.
         _captureCamera.targetTexture = _renderTexture;
     }
 
@@ -78,26 +71,21 @@ public class DrawingWindow : EditorWindow
 
         float scaledWidth = 0;
         float scaledHeight = 0;
+
         Rect textureRect = new Rect(0, 0, scaledWidth, scaledHeight);
 
-        // RenderTexture를 편집기 윈도우에 표시합니다.
         if (_renderTexture != null)
         {
-            // 게임 화면 텍스처의 원래 크기와 비율을 유지하면서 창 크기에 맞게 확대/축소합니다.
             float aspectRatio = (float)_renderTexture.width / (float)_renderTexture.height;
             scaledWidth = windowWidth;
             scaledHeight = windowHeight;
 
             if (scaledWidth / aspectRatio > windowHeight)
-            {
                 scaledWidth = windowHeight * aspectRatio;
-            }
+            
             else
-            {
                 scaledHeight = windowWidth / aspectRatio;
-            }
 
-            // 확대/축소된 텍스처를 그립니다.
             textureRect = new Rect(0, 0, scaledWidth, scaledHeight);
         }
 
@@ -116,7 +104,6 @@ public class DrawingWindow : EditorWindow
                     Rect tileRect = new Rect(i * tileWidth, j * tileHeight, tileWidth, tileHeight);
                     if (tileRect.x < scaledWidth && tileRect.y < scaledHeight)
                     {
-                        // 아래 여백 문제를 해결하기 위해 아래 코드를 추가합니다.
                         float clippedWidth = Mathf.Min(tileWidth, scaledWidth - tileRect.x);
                         float clippedHeight = Mathf.Min(tileHeight, scaledHeight - tileRect.y);
 
@@ -133,12 +120,11 @@ public class DrawingWindow : EditorWindow
             }
         }
 
-        // RenderTexture를 편집기 윈도우에 표시합니다.
         if (_renderTexture != null)
-        {
             GUI.DrawTexture(textureRect, _renderTexture, ScaleMode.ScaleToFit);
-        }
 
+        Repaint();
+        
         if (BrushEditor.IsPlacing && BrushEditor.CubePrefab != null)
             {
                 Event e = Event.current;
@@ -158,17 +144,13 @@ public class DrawingWindow : EditorWindow
                         {
                             Vector3 direction = hitInfo.point - _initialMousePos;
                             if (shiftPressed && Mathf.Abs(direction.x) > Mathf.Abs(direction.y) && Mathf.Abs(direction.x) > Mathf.Abs(direction.z))
-                            {
                                 hitInfo.point = new Vector3(hitInfo.point.x, _initialMousePos.y, _initialMousePos.z);
-                            }
+                            
                             else if (shiftPressed && Mathf.Abs(direction.y) > Mathf.Abs(direction.z))
-                            {
                                 hitInfo.point = new Vector3(_initialMousePos.x, hitInfo.point.y, _initialMousePos.z);
-                            }
+                            
                             else if (shiftPressed)
-                            {
-                                hitInfo.point = new Vector3(_initialMousePos.x, _initialMousePos.y, hitInfo.point.z);
-                            }
+                                hitInfo.point = new Vector3(_initialMousePos.x, _initialMousePos.y, hitInfo.point.z);                     
                         }
 
                         if (e.type == EventType.MouseDown && e.button == 0)

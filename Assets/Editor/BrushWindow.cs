@@ -14,8 +14,8 @@ public class BrushWindow : EditorWindow
     public static void ShowWindow()
     {
        GetWindow<BrushWindow>("Brush");
-   
     }
+
     public void OnGUI()
     {
         _showBrushSettings = EditorGUILayout.BeginFoldoutHeaderGroup(_showBrushSettings, "브러쉬 세팅");

@@ -7,6 +7,7 @@ using System.Linq;
 
 public class LayerWindow : EditorWindow
 {
+    private DateTime _lastUndoRedoCall = DateTime.MinValue;
     //배경이 투명할 때 쓸 격자 이미지
     private Texture2D _gridTexture;
     private Vector2 _scrollPosition = Vector2.zero; // 추가된 코드
@@ -28,6 +29,7 @@ public class LayerWindow : EditorWindow
         BrushEditor.EnablePlacing();
         EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
          Undo.undoRedoPerformed += OnUndoRedoPerformed;
+        Debug.Log("Subscribed to Undo.undoRedoPerformed");
 
     }
     private void OnDisable()
@@ -35,46 +37,54 @@ public class LayerWindow : EditorWindow
         BrushEditor.DisablePlacing();
         EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
          Undo.undoRedoPerformed -= OnUndoRedoPerformed;
+        Debug.Log("Unsubscribed from Undo.undoRedoPerformed");
     }
 
     private void OnUndoRedoPerformed()
     {
-        Transform cubeParent = BrushEditor.GetCubeParent();
-        Dictionary<int, Transform> layers = new Dictionary<int, Transform>();
-
-        for (int i = 0; i < cubeParent.childCount; i++)
+        Debug.Log("OnUndoRedoPerformed called");
+        if ((DateTime.Now - _lastUndoRedoCall).TotalMilliseconds > 1000)
         {
-            Transform childLayer = cubeParent.GetChild(i);
-            int id = childLayer.GetComponent<LayerData>().Id;
-            string name = childLayer.GetComponent<LayerData>().Name;
+            Transform cubeParent = BrushEditor.GetCubeParent();
+            Dictionary<int, Transform> layers = new Dictionary<int, Transform>();
 
-            if (!layers.ContainsKey(id))
-                layers.Add(id, childLayer);
-
-            childLayer.name = name;
-        }
-
-        var destroyedLayers = BrushEditor.LayerObjects.Where(x => x.Value == null).Select(x => x.Key).ToList();
-        var createdLayers = layers.Keys.Except(BrushEditor.LayerObjects.Keys).ToList();
-
-        if (destroyedLayers.Count > 0)
-        {
-            foreach (int id in destroyedLayers)
+            for (int i = 0; i < cubeParent.childCount; i++)
             {
-                BrushEditor.ToDeleteLayerIds.Add(id);
-                BrushEditor.EmptyLayerIds.Add(id);
-            }
-        }
-        else if (createdLayers.Count > 0)
-        {
-            foreach (int id in createdLayers)
-            {
-                BrushEditor.ToRestoreLayerIds.Add(id, layers[id]);
-                BrushEditor.EmptyLayerIds.Remove(id);
-            }
-        }
+                Transform childLayer = cubeParent.GetChild(i);
+                int id = childLayer.GetComponent<LayerData>().Id;
+                string name = childLayer.GetComponent<LayerData>().Name;
 
-        Repaint();
+                if (!layers.ContainsKey(id))
+                    layers.Add(id, childLayer);
+
+                childLayer.name = name;
+            }
+
+            var destroyedLayers = BrushEditor.LayerObjects.Where(x => x.Value == null).Select(x => x.Key).ToList();
+            var createdLayers = layers.Keys.Except(BrushEditor.LayerObjects.Keys).ToList();
+
+            if (destroyedLayers.Count > 0)
+            {
+                foreach (int id in destroyedLayers)
+                {
+                    BrushEditor.ToDeleteLayerIds.Add(id);
+                    BrushEditor.EmptyLayerIds.Add(id);
+                }
+            }
+            if (createdLayers.Count > 0)
+            {
+                foreach (int id in createdLayers)
+                {
+                    if (BrushEditor.ToRestoreLayerIds.ContainsKey(id) == false)
+                        BrushEditor.ToRestoreLayerIds.Add(id, layers[id]);
+                    BrushEditor.EmptyLayerIds.Remove(id);
+                }
+            }
+
+            Repaint();
+
+        }
+           
     }
 
     private void OnPlayModeStateChanged(PlayModeStateChange state)
@@ -108,7 +118,6 @@ public class LayerWindow : EditorWindow
         int canvasLayer = LayerMask.NameToLayer("Canvas");
         tempCamera.cullingMask = 1 << canvasLayer;
 
-        //  현재 레이어를 제외한 다른 레이어들을 비활성화
         Transform cubeParent = BrushEditor.GetCubeParent();
         List<bool> layerStates = new List<bool>();
         for (int i = 0; i < cubeParent.childCount; i++)
@@ -230,9 +239,6 @@ public class LayerWindow : EditorWindow
 
             BrushEditor.DeleteLayerIds();
             BrushEditor.RestoreLayerIds();
-
-            Repaint();
-
             GUILayout.EndScrollView();
             UpdateScrollView();
         }
@@ -282,6 +288,7 @@ public class LayerWindow : EditorWindow
         s_selectedLayerIndex = -1;
 
         Undo.DestroyObjectImmediate(layer.gameObject);
+        Repaint();
     }
 
     private void DeleteAllLayers()

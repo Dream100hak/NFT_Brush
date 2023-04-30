@@ -15,13 +15,13 @@ MonoBehaviour:
   CubeSize: 1.138
   PlacementDistance: 1
   CubeColor: {r: 1, g: 0, b: 0, a: 1}
-  RotatorEnabled: 1
+  RotatorEnabled: 0
   MoverEnabled: 1
   NatureEnabled: 1
   Random_RotSpeed: 3
   StraightEnabled: 1
   Straight_MoveSpeed: 1
-  Straight_MoveDirection: 1
+  Straight_MoveDirection: 2
   BlackholeEnabled: 0
   Blackhole_AttractionForce: 1
   SnowEnabled: 0

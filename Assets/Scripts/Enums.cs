@@ -3,3 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public enum E_Direction { Up, Down, Left, Right }
+
+public enum E_DockPosition
+{
+    Left,
+    Top,
+    Right,
+    Bottom
+}
