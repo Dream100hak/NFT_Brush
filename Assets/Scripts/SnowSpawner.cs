@@ -41,7 +41,6 @@ public class SnowSpawner : MonoBehaviour
 
         GameObject newCubeSnow = Instantiate(_cubeSnowPrefab, spawnPosition, Quaternion.identity);
         newCubeSnow.transform.localScale = transform.localScale;
-        // 부모 게임 오브젝트의 material을 따라가게 합니다.
         Renderer parentRenderer = GetComponent<Renderer>();
         Renderer cubeSnowRenderer = newCubeSnow.GetComponent<Renderer>();
 

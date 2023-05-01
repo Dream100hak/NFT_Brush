@@ -1,11 +1,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
+
 using UnityEngine;
 
 public class Utils
 {
+#if UNITY_EDITOR
     public static T EditPropertyWithUndo<T>(string label, T currentValue, Action<T> setValueAction, Func<string, T, T> drawField, UnityEngine.Object undoRecordObject)
     {
         EditorGUI.BeginChangeCheck();
@@ -37,4 +41,5 @@ public class Utils
         }
         return newValue;
     }
+#endif
 }

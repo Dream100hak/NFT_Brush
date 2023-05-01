@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using System;
 using System.Linq;
+using Unity.VisualScripting;
 
 public class LayerWindow : EditorWindow
 {
@@ -262,9 +263,14 @@ public class LayerWindow : EditorWindow
     private static void CreateCanvas()
     {
         Camera main = Camera.main;
+        main.clearFlags = CameraClearFlags.SolidColor;
+        main.backgroundColor = Color.black;
         main.orthographic = true;
         main.orthographicSize = 10.2f;
         main.transform.position = new Vector3(0, 0, -10);
+  
+        if(main.GetComponent<FitToScreen>() == null)
+            main.AddComponent<FitToScreen>();
 
         GameObject canvas = new GameObject("Canvas");
         GameObject collider = new GameObject("Collider");
@@ -274,7 +280,6 @@ public class LayerWindow : EditorWindow
         collider.GetComponent<BoxCollider>().isTrigger = true;
         collider.GetComponent<BoxCollider>().size = new Vector3(100, 100, 0.2f);
 
-        Camera drawCam = new GameObject("DrawCamera").AddComponent<Camera>();
         SpriteRenderer circle = new GameObject("Circle").AddComponent<SpriteRenderer>();
         
     }

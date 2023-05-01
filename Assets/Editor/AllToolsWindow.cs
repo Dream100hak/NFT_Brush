@@ -14,12 +14,42 @@ public class AllToolsWindow : EditorWindow
             return;
         }
 
+        DockWindows();
+    }
+
+    private static void DockWindows()
+    {
         var allLayerWindow = GetWindow<AllToolsWindow>("Brush");
         var drawingWindow = GetWindow<DrawingWindow>("Drawing");
         var layerWindow = GetWindow<LayerWindow>("Layer");
 
         allLayerWindow.Dock(drawingWindow, E_DockPosition.Left);
         allLayerWindow.Dock(layerWindow, E_DockPosition.Bottom);
+    }
+    private static void CloseAllWindows()
+    {
+        var drawingWindow = GetWindow<DrawingWindow>("Drawing");
+        var layerWindow = GetWindow<LayerWindow>("Layer");
+
+        drawingWindow.Close();
+        layerWindow.Close();
+    }
+
+    private void ResetDocking()
+    {
+        EditorApplication.delayCall += () =>
+        {
+            CloseAllWindows();
+
+            if (!IsWindowOpen<DrawingWindow>() || !IsWindowOpen<LayerWindow>())
+            {
+                var drawingWindow = GetWindow<DrawingWindow>("Drawing");
+                var layerWindow = GetWindow<LayerWindow>("Layer");
+
+                this.Dock(drawingWindow, E_DockPosition.Left);
+                this.Dock(layerWindow, E_DockPosition.Bottom);
+            }
+        };
     }
 
     private static bool IsWindowOpen<T>() where T : EditorWindow
@@ -30,20 +60,21 @@ public class AllToolsWindow : EditorWindow
 
     private void OnEnable()
     {
+        Debug.Log(15);
         minSize = new Vector2(600, 800);
 
-        // Set the initial size of the window
         float width = 800;
         float height = 600;
         float xPos = (Screen.currentResolution.width - width) * 0.5f;
         float yPos = (Screen.currentResolution.height - height) * 0.5f;
 
-        // Adjust for the main editor window
         var mainEditorWindowPosition = GetMainEditorWindowPosition();
         xPos += mainEditorWindowPosition.x;
         yPos += mainEditorWindowPosition.y;
 
         position = new Rect(xPos, yPos, width, height);
+
+        ResetDocking();
 
         _brushWindow = CreateInstance<BrushWindow>();
     }
@@ -53,7 +84,7 @@ public class AllToolsWindow : EditorWindow
         Type mainEditorWindowType = Type.GetType("UnityEditor.MainView.UnityEditor");
         if (mainEditorWindowType != null)
         {
-            var mainEditorWindow = UnityEditor.EditorWindow.GetWindow(mainEditorWindowType);
+            var mainEditorWindow = GetWindow(mainEditorWindowType);
             if (mainEditorWindow != null)
             {
                 position = new Vector2(mainEditorWindow.position.x, mainEditorWindow.position.y);
