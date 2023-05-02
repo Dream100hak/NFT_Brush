@@ -30,7 +30,4 @@ public class CubePlacerEditorData : ScriptableObject
     public float SnowSpawn_SwayAmount = 0.1f;
 
 
-
-
-
 }

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   CubeSize: 0.32
   PlacementDistance: 0.74
-  CubeColor: {r: 1, g: 1, b: 1, a: 1}
+  CubeColor: {r: 1, g: 0, b: 0, a: 1}
   RotatorEnabled: 1
   MoverEnabled: 0
   NatureEnabled: 0

@@ -29,10 +29,12 @@ public class LayerWindow : EditorWindow
 
         BrushEditor.EnablePlacing();
         EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
-         Undo.undoRedoPerformed += OnUndoRedoPerformed;
+        Undo.undoRedoPerformed += OnUndoRedoPerformed;
         Debug.Log("Subscribed to Undo.undoRedoPerformed");
 
     }
+
+
     private void OnDisable()
     {
         BrushEditor.DisablePlacing();

@@ -55,10 +55,7 @@ public class BrushWindow : EditorWindow
                 DrawWhiteSeparatorLine(0, 1.7f);
             }
 
-
             GUI.color = originalColor;
-
-
             GUILayout.Space(5);
 
             BrushEditor.ED.MoverEnabled = Utils.EditPropertyWithUndo("ÀÌµ¿", BrushEditor.ED.MoverEnabled, enbled => BrushEditor.ED.MoverEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), BrushEditor.ED, 120f);
@@ -134,8 +131,6 @@ public class BrushWindow : EditorWindow
                 DrawWhiteSeparatorLine(0, 1.7f);
             }
         }
-
-
         EditorGUILayout.EndFoldoutHeaderGroup();
     }
 

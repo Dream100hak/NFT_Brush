@@ -18,7 +18,7 @@ public class FitToScreen : MonoBehaviour
         int deviceWidth = Screen.width; // 기기 너비 저장
         int deviceHeight = Screen.height; // 기기 높이 저장
 
-        Screen.SetResolution(setWidth, (int)(((float)deviceHeight / deviceWidth) * setWidth), true); // SetResolution 함수 제대로 사용하기
+        Screen.SetResolution(setWidth, (int)(((float)deviceHeight / deviceWidth) * setWidth), true); 
 
         if ((float)setWidth / setHeight < (float)deviceWidth / deviceHeight) // 기기의 해상도 비가 더 큰 경우
         {

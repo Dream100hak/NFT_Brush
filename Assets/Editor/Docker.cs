@@ -1,5 +1,8 @@
 #if UNITY_EDITOR
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.Remoting.Messaging;
 using Unity.VisualScripting;
@@ -41,7 +44,6 @@ public static class Docker
             this.instance = instance;
             type = instance.GetType();
         }
-
         public object window
         {
             get
@@ -72,7 +74,6 @@ public static class Docker
             type = instance.GetType();
         }
 
-
         public object rootSplitView
         {
             get
@@ -81,6 +82,7 @@ public static class Docker
                 return property.GetValue(instance, null);
             }
         }
+
     }
 
     private class _SplitView
@@ -116,6 +118,7 @@ public static class Docker
     }
     #endregion
 
+
     public static void Dock(this EditorWindow wnd, EditorWindow other, E_DockPosition position)
     {
         var parent = new _EditorWindow(wnd);
@@ -123,12 +126,14 @@ public static class Docker
         var dockArea = new _DockArea(parent.m_Parent);
         var containerWindow = new _ContainerWindow(dockArea.window);
         var splitView = new _SplitView(containerWindow.rootSplitView);
-        var mousePosition = GetFakeMousePosition(splitView, position , 20);
+        var mousePosition = GetFakeMousePosition(splitView, position, 10);
         var dropInfo = splitView.DragOver(other, mousePosition);
         dockArea.s_OriginalDragSource = child.m_Parent;
         splitView.PerformDrop(other, dropInfo, mousePosition);
-    }
 
+    }
+    
+ 
     private static Vector2 GetFakeMousePosition(_SplitView view, E_DockPosition position, float offset)
     {
         Vector2 mousePosition = Vector2.zero;
@@ -151,5 +156,7 @@ public static class Docker
 
         return new Vector2(view.position.x + mousePosition.x, view.position.y + mousePosition.y);
     }
+
+
 }
 #endif
