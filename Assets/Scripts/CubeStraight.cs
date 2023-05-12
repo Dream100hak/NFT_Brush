@@ -1,7 +1,11 @@
+using System.IO.IsolatedStorage;
 using UnityEngine;
 
 public class CubeStraight : MonoBehaviour
 {
+    private bool _destroyMode = false;
+    public bool DestroyMode { get => _destroyMode; set { _destroyMode = value; } }
+
     [SerializeField]
     private E_Direction _moveDirection = E_Direction.Down;
     public E_Direction MoveDirection { get => _moveDirection; set => _moveDirection = value; }
@@ -11,6 +15,8 @@ public class CubeStraight : MonoBehaviour
 
     private Vector3 _startPosition;
     private Camera _mainCamera;
+
+    public bool _exception; 
 
     void Start()
     {
@@ -39,14 +45,19 @@ public class CubeStraight : MonoBehaviour
 
         transform.position += moveVector;
 
-        // 월드 좌표를 카메라 뷰포트 좌표로 변환
         Vector3 viewportPos = _mainCamera.WorldToViewportPoint(transform.position);
 
-        // 큐브가 카메라 영역을 벗어났는지 확인
-        if (viewportPos.y < -0.1f || viewportPos.y > 1.1f || viewportPos.x < -0.1f || viewportPos.x > 1.1f)
+
+        if(_exception == false)
         {
-            // 원래 위치로 돌아가기
-            transform.position = _startPosition;
+            if (viewportPos.y < -0.1f || viewportPos.y > 1.1f || viewportPos.x < -0.1f || viewportPos.x > 1.1f)
+            {
+                if (DestroyMode == false)
+                    transform.position = _startPosition;
+                else
+                    Destroy(gameObject);
+            }
         }
+
     }
 }

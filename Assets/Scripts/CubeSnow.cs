@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class CubeSnow : MonoBehaviour
 {
@@ -6,9 +7,6 @@ public class CubeSnow : MonoBehaviour
     private bool _destroyMode = false;
     public bool DestroyMode { get => _destroyMode; set { _destroyMode = value; } }
 
-
-
-    private E_Direction _moveDirection = E_Direction.Down;
     [SerializeField]
     private float _snowSpeed = 2.0f;
     public float SnowSpeed { get => _snowSpeed; set { _snowSpeed = value; } }
@@ -21,9 +19,19 @@ public class CubeSnow : MonoBehaviour
     private float _swayAmount = 0.1f;
     public float SwayAmount { get => _swayAmount; set { _swayAmount = value; } }
 
+    [SerializeField]
+    private Vector3 _windDirection = Vector3.zero;
+    public Vector3 WindDirection { get => _windDirection; set { _windDirection = value; } }
+
+    [SerializeField]
+    private float _windStrength = 0f;
+    public float WindStrength { get => _windStrength; set { _windStrength = value; } }
+
     private Vector3 _startPosition;
     private Camera _mainCamera;
     private float _noiseOffset;
+
+    private Vector3 _moveVector = Vector3.zero;
 
     void Start()
     {
@@ -34,19 +42,26 @@ public class CubeSnow : MonoBehaviour
         _snowSpeed = Random.Range(1.5f, 2f);
     }
 
+
     void Update()
     {
+
         Vector3 moveVector = Vector3.zero;
 
-        switch (_moveDirection)
-        {
-            case E_Direction.Down:
-                moveVector = new Vector3(0, -_snowSpeed * Time.deltaTime, 0);
-                break;
-        }
+        moveVector = new Vector3(0, -_snowSpeed * Time.deltaTime, 0);
 
         float sway = Mathf.PerlinNoise(Time.time * _swayAmount + _noiseOffset, 0f) * 2 - 1;
         moveVector.x += sway * _swayIntensity * Time.deltaTime;
+
+        // 바람에 따라서 x 방향으로도 이동
+        if (Input.GetKey(KeyCode.LeftArrow))
+        {
+            moveVector.x -= .5f * Time.deltaTime;
+        }
+        else if (Input.GetKey(KeyCode.RightArrow))
+        {
+            moveVector.x += .5f * Time.deltaTime;
+        }
 
         transform.position += moveVector;
 

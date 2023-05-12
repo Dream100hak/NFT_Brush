@@ -12,16 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5da79080e775d44990ac74f44adf415, type: 3}
   m_Name: BrushData
   m_EditorClassIdentifier: 
-  CubeSize: 0.32
-  PlacementDistance: 0.74
-  CubeColor: {r: 1, g: 0, b: 0, a: 1}
+  CubeSize: 0.614
+  PlacementDistance: 0.596
+  CubeColor: {r: 0, g: 0.062930584, b: 1, a: 1}
   RotatorEnabled: 1
-  MoverEnabled: 0
+  MoverEnabled: 1
   NatureEnabled: 0
   Random_RotSpeed: 1
   StraightEnabled: 1
   Straight_MoveSpeed: 1
-  Straight_MoveDirection: 2
+  Straight_MoveDirection: 1
   BlackholeEnabled: 0
   Blackhole_AttractionForce: 2
   SnowEnabled: 0

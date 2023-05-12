@@ -26,4 +26,18 @@ public class LayerData : MonoBehaviour
            
         }
     }
+    [SerializeField]
+    private Rect _layerRect = new Rect();
+    public Rect LayerRect
+    {
+        get => _layerRect;
+        set
+        {
+            if (_layerRect != value)
+            {
+                _layerRect = value;
+            }
+
+        }
+    }
 }

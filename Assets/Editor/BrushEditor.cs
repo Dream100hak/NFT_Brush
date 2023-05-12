@@ -146,6 +146,14 @@ public class BrushEditor
             s_generateId++;       
         }
     }
+    public static void RemoveCube(RaycastHit hitInfo)
+    {
+        if (hitInfo.collider != null && hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Canvas"))
+        {
+            GameObject cube = hitInfo.collider.gameObject;
+            Undo.DestroyObjectImmediate(cube);
+        }
+    }
 
     public static void CreateNewLayer()
     {

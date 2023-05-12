@@ -2,12 +2,12 @@ using System;
 using System.Reflection;
 using UnityEditor;
 
-public class GameViewSize
+public class CustomGameViewSize
 {
     private static object gameViewSizesInstance;
     private static MethodInfo getGroupMethod;
 
-    static GameViewSize()
+    static CustomGameViewSize()
     {
         var sizesType = typeof(Editor).Assembly.GetType("UnityEditor.GameViewSizes");
         var singleType = typeof(ScriptableSingleton<>).MakeGenericType(sizesType);

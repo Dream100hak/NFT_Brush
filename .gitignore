@@ -9,7 +9,7 @@
 /[Bb]uilds/
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
-[Aa]ssets/[Rr]esources/[Tt]extures/
+/[Aa]ssets/[Rr]esources/*
 
 # MemoryCaptures can get excessive in size.
 # They also could contain extremely sensitive data
@@ -47,7 +47,7 @@ ExportedObj/
 *.mdb
 *.opendb
 *.VC.db
-*.png
+
 
 # Unity3D generated meta files
 *.pidb.meta
@@ -72,3 +72,10 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+Assets/Resources/Textures/Woman/Woman_001.png
+Assets/Resources/Textures/GoldFish/GoldFish_005.png
+Assets/Resources/Textures/GoldFish/GoldFish_004.png
+Assets/Resources/Textures/GoldFish/GoldFish_003.png
+Assets/Resources/Textures/GoldFish/GoldFish_002.png
+Assets/Resources/Textures/GoldFish/GoldFish_001.png
+*.png

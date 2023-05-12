@@ -61,5 +61,6 @@ public class SnowSpawner : MonoBehaviour
         newCubeSnow.GetComponent<CubeSnow>().DestroyMode = true;
 
         newCubeSnow.GetComponent<BoxCollider>().isTrigger = false;
+        newCubeSnow.AddComponent<CubeResizer>();
     }
 }
