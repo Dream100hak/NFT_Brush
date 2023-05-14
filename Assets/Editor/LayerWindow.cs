@@ -16,6 +16,8 @@ public class LayerWindow : EditorWindow
     private KeyValuePair<int, LayerData> _draggingLayer = new KeyValuePair<int, LayerData>();
     private KeyValuePair<int, LayerData> _insertLayer = new KeyValuePair<int, LayerData>();
 
+    private Dictionary<int, int> _prevLayerIndexs = new Dictionary<int, int>();
+
     private List<int> _layerIndexList = new List<int>();
 
     private DateTime _dragStartTime;
@@ -53,10 +55,11 @@ public class LayerWindow : EditorWindow
 
         Transform cubeParent = BrushEditor.GetCubeParent();
         Dictionary<int, Transform> layers = new Dictionary<int, Transform>();
-
+        
         for (int i = 0; i < cubeParent.childCount; i++)
         {
             Transform childLayer = cubeParent.GetChild(i);
+
             int id = childLayer.GetComponent<LayerData>().Id;
             string name = childLayer.GetComponent<LayerData>().Name;
 
@@ -64,7 +67,16 @@ public class LayerWindow : EditorWindow
                 layers.Add(id, childLayer);
 
             childLayer.name = name;
+
+            //Dragged Undo check
+            if(_prevLayerIndexs.ContainsKey(id))
+            {
+                childLayer.SetSiblingIndex(_prevLayerIndexs[id]);
+            }
         }
+
+        _prevLayerIndexs.Clear();
+
 
         var destroyedLayers = LayerEditor.LayerObjects.Where(x => x.Value == null).Select(x => x.Key).ToList();
         var createdLayers = layers.Keys.Except(LayerEditor.LayerObjects.Keys).ToList();
@@ -331,8 +343,13 @@ public class LayerWindow : EditorWindow
 
          if (Event.current.type == EventType.MouseUp && _insertLayer.Value != null)
         {
+            _prevLayerIndexs.Clear();
+
             LayerData draggedLayerData = _draggingLayer.Value;
             LayerData insertLayerData = _insertLayer.Value;
+
+            UnityEngine.Object[] recordObjs = new UnityEngine.Object[] { draggedLayerData, insertLayerData };
+            Undo.RecordObjects(recordObjs, "Dragged Layer");
 
             _insertLayer = new KeyValuePair<int, LayerData>();
             _draggingLayer = new KeyValuePair<int, LayerData>();
@@ -351,6 +368,9 @@ public class LayerWindow : EditorWindow
             insertLayerData.transform.SetSiblingIndex(draggedIndex);
             draggedLayerData.transform.SetSiblingIndex(insertIndex);
 
+            _prevLayerIndexs.Add(draggedLayerData.Id, draggedIndex);
+            _prevLayerIndexs.Add(insertLayerData.Id, insertIndex);
+ 
             GUIUtility.keyboardControl = 0;
             Event.current.Use();
 
