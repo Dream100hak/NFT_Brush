@@ -11,7 +11,7 @@ public class AllToolsWindow : EditorWindow
     [MenuItem("Photoshop/All Tools %#w")]
     public static void ShowWindow()
     {
-        if (IsWindowOpen<AllToolsWindow>() && IsWindowOpen<DrawingWindow>() )
+        if (Utils.IsWindowOpen<AllToolsWindow>() && Utils.IsWindowOpen<DrawingWindow>() )
             return;
 
           DockWindows();
@@ -56,12 +56,7 @@ public class AllToolsWindow : EditorWindow
         allLayerWindow.Dock(layerWindow, E_DockPosition.Bottom);
     }
 
-    private static bool IsWindowOpen<T>() where T : EditorWindow
-    {
-        T[] windows = Resources.FindObjectsOfTypeAll<T>();
-        return windows != null && windows.Length > 0;
-    }
-
+ 
     private void OnGUI()
     {
         _brushWindow.OnGUI();  

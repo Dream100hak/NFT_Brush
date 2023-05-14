@@ -38,5 +38,16 @@ public class Utils
         }
         return newValue;
     }
+    public static bool IsWindowOpen<T>() where T : EditorWindow
+    {
+        T[] windows = Resources.FindObjectsOfTypeAll<T>();
+        return windows != null && windows.Length > 0;
+    }
+    public static bool IsWindowOpen(Type windowType)
+    {
+        EditorWindow[] windows = Resources.FindObjectsOfTypeAll(windowType) as EditorWindow[];
+        return windows != null && windows.Length > 0;
+    }
+
 #endif
 }

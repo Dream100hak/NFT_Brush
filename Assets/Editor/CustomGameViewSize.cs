@@ -7,6 +7,7 @@ public class CustomGameViewSize
     private static object gameViewSizesInstance;
     private static MethodInfo getGroupMethod;
 
+
     static CustomGameViewSize()
     {
         var sizesType = typeof(Editor).Assembly.GetType("UnityEditor.GameViewSizes");
@@ -22,9 +23,15 @@ public class CustomGameViewSize
         FixedResolution
     }
 
+
+
     public static void SetSize(int index)
     {
         var gameViewType = typeof(Editor).Assembly.GetType("UnityEditor.GameView");
+
+        //if (Utils.IsWindowOpen(gameViewType))
+          //  return;
+
         var gameViewWindow = EditorWindow.GetWindow(gameViewType);
         var sizeSelectionCallback = gameViewType.GetMethod("SizeSelectionCallback");
         sizeSelectionCallback.Invoke(gameViewWindow, new object[] { index, null });

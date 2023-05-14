@@ -6,17 +6,13 @@ using System;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine.UI;
-using static UnityEditor.Experimental.GraphView.GraphView;
 
 public class LayerWindow : EditorWindow
 {
     private Texture2D _gridTexture;
-    private Vector2 _scrollPosition = Vector2.zero; 
+    private Vector2 _scrollPosition = Vector2.zero;
 
-    public static int s_selectedLayerIndex = -1;
-    private bool _scrollToNewLayer = false;
-    private float _layersTotalHeight;
-
+    private bool _isDragging = false;
     private KeyValuePair<int, LayerData> _draggingLayer = new KeyValuePair<int, LayerData>();
     private KeyValuePair<int, LayerData> _insertLayer = new KeyValuePair<int, LayerData>();
 
@@ -37,6 +33,7 @@ public class LayerWindow : EditorWindow
         BrushEditor.EnablePlacing();
         EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         Undo.undoRedoPerformed += OnUndoRedoPerformed;
+        LayerEditor.ED.SelectedLayerIds.Clear();
         Debug.Log("Subscribed to Undo.undoRedoPerformed");
 
     }
@@ -44,8 +41,10 @@ public class LayerWindow : EditorWindow
     {
         BrushEditor.DisablePlacing();
         EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
-         Undo.undoRedoPerformed -= OnUndoRedoPerformed;
+        Undo.undoRedoPerformed -= OnUndoRedoPerformed;
         Debug.Log("Unsubscribed from Undo.undoRedoPerformed");
+
+        Debug.Log("해제");
     }
 
     private void OnUndoRedoPerformed()
@@ -67,24 +66,24 @@ public class LayerWindow : EditorWindow
             childLayer.name = name;
         }
 
-        var destroyedLayers = BrushEditor.LayerObjects.Where(x => x.Value == null).Select(x => x.Key).ToList();
-        var createdLayers = layers.Keys.Except(BrushEditor.LayerObjects.Keys).ToList();
+        var destroyedLayers = LayerEditor.LayerObjects.Where(x => x.Value == null).Select(x => x.Key).ToList();
+        var createdLayers = layers.Keys.Except(LayerEditor.LayerObjects.Keys).ToList();
 
         if (destroyedLayers.Count > 0)
         {
             foreach (int id in destroyedLayers)
             {
-                BrushEditor.ToDeleteLayerIds.Add(id);
-                BrushEditor.EmptyLayerIds.Add(id);
+                LayerEditor.ToDeleteLayerIds.Add(id);
+                LayerEditor.EmptyLayerIds.Add(id);
             }
         }
         if (createdLayers.Count > 0)
         {
             foreach (int id in createdLayers)
             {
-                if (BrushEditor.ToRestoreLayerIds.ContainsKey(id) == false)
-                    BrushEditor.ToRestoreLayerIds.Add(id, layers[id]);
-                BrushEditor.EmptyLayerIds.Remove(id);
+                if (LayerEditor.ToRestoreLayerIds.ContainsKey(id) == false)
+                    LayerEditor.ToRestoreLayerIds.Add(id, layers[id]);
+                LayerEditor.EmptyLayerIds.Remove(id);
             }
         }
         Repaint();
@@ -154,7 +153,7 @@ public class LayerWindow : EditorWindow
         DestroyImmediate(tempCamera.gameObject);
         DestroyImmediate(renderTexture);
         DestroyImmediate(gridQuad);
-        // 원래 레이어 상태로 복구
+
         for (int i = 0; i < cubeParent.childCount; i++)
         {
             Transform childLayer = cubeParent.GetChild(i);
@@ -162,22 +161,17 @@ public class LayerWindow : EditorWindow
         }
         return snapshot;
     }
-
     public void OnGUI()
     {
-        var cubePlacer = FindObjectOfType<CubePlacer>();
-        if (cubePlacer == null)
+        if (FindObjectOfType<CubePlacer>() == null)
         {
             CreateCanvas();
             return;
         }
 
-        Transform cubeParent = BrushEditor.GetCubeParent();
-
-        if (cubeParent != null)
+        if (BrushEditor.GetCubeParent() != null)
             MakeLayerList();
         
-
         GUILayout.Space(20);
         DeleteAllLayers();
         GUILayout.Space(20);
@@ -213,30 +207,30 @@ public class LayerWindow : EditorWindow
     {
         if (GUILayout.Button("Create New Layer", GUILayout.Height(60)))
         {
-            BrushEditor.CreateNewLayer();
+            LayerEditor.ED.SelectedLayerIds.Clear();
+            LayerEditor.CreateNewLayer();
             GUIUtility.keyboardControl = 0;
-            _scrollToNewLayer = true;
         }
     }
-    bool _isDragging = false; // 새로운 변수 추가
+
     private void MakeLayerList()
     {
+        bool clickedInsideLayer = false;
+
         _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, false, true);
-        _layersTotalHeight = 0;
 
         _layerIndexList.Clear();
-        foreach (var layerPair in BrushEditor.LayerObjects)
+        foreach (var layerPair in LayerEditor.LayerObjects)
             _layerIndexList.Add(layerPair.Key);
 
         var sortedLayerObjects = _layerIndexList
-              .Select(x => new KeyValuePair<int, Transform>(x, BrushEditor.LayerObjects[x]))
+              .Select(x => new KeyValuePair<int, Transform>(x, LayerEditor.LayerObjects[x]))
               .Where(x => x.Value != null)
               .OrderByDescending(x => x.Value.GetComponent<LayerData>().CreationTimestamp)
               .ToList();
 
         List<int> tempLayerIndexList = new List<int>(_layerIndexList);
-
-        List<LayerData> layerDatas = BrushEditor.LayerObjects.Select(x => x.Value.GetComponent<LayerData>()).ToList();
+        List<LayerData> layerDatas = LayerEditor.GetLayerDatas();
 
         foreach (var layerPair in sortedLayerObjects)
         {
@@ -247,21 +241,25 @@ public class LayerWindow : EditorWindow
                 continue;
 
             LayerData layerData = layer.GetComponent<LayerData>();
-
             Color originBackgroundColor = GUI.backgroundColor;
-            GUI.backgroundColor = (i == s_selectedLayerIndex) ? Color.gray : Color.clear;
+            GUI.backgroundColor = Color.clear;
+
+            foreach (var id in LayerEditor.ED.SelectedLayerIds)
+            {
+                if(id == i)
+                {
+                    GUI.backgroundColor = Color.gray;
+                    break;
+                }     
+            }
 
             GUILayout.BeginHorizontal(GUI.skin.box);
 
             Texture2D layerSnapshot = CaptureLayerSnapshot(layer); // 스냅샷 관련
-
             Rect imageRect = GUILayoutUtility.GetRect(50, 50);
             GUI.DrawTexture(imageRect, layerSnapshot, ScaleMode.ScaleToFit);
-
             ChangeLayerName(layerData); // 이름 변경 관련
-
             GUILayout.FlexibleSpace();
-
             OneDeleteLayer(layer); // 레이어 삭제 관련
 
             GUILayout.EndHorizontal();
@@ -269,7 +267,7 @@ public class LayerWindow : EditorWindow
             Rect layerRect = GUILayoutUtility.GetLastRect();
             layerRect.width = EditorGUIUtility.currentViewWidth;
 
-            if(layerRect.x != 0  && layerRect.y != 0 )
+            if (layerRect.x != 0  && layerRect.y != 0 )
                 layerData.LayerRect = layerRect;
 
             if (_isDragging &&  layerData.LayerRect.Contains(Event.current.mousePosition))
@@ -280,34 +278,44 @@ public class LayerWindow : EditorWindow
                 if (Event.current.button == 0)
                 {
                     _draggingLayer = new KeyValuePair<int, LayerData>(i, layerData);
-                    s_selectedLayerIndex = i;
+                    _dragStartTime = DateTime.Now;
+                    clickedInsideLayer = true;
 
-                    _dragStartTime = DateTime.Now; // 드래그를 시작한 시간을 저장합니다.
+                    if (Event.current.control)
+                        InsertControlLayerId(i);
+                    
+                    else if (Event.current.shift)
+                        InsertShiftLayerId(i);            
+                    else
+                    {
+                        LayerEditor.ED.SelectedLayerIds.Clear();
+                        LayerEditor.ED.SelectedLayerIds.Add(i);
+                    }
                 }
                 Event.current.Use();
             }
 
-            if (Event.current.type == EventType.MouseDrag)
+            if (Event.current.type == EventType.MouseDrag && layerRect.Contains(Event.current.mousePosition))
             {
                 TimeSpan dragDuration = DateTime.Now - _dragStartTime;
 
                 if (dragDuration.TotalSeconds >= 0.1f)
                     _isDragging = true;
             }
-            
 
             if (Event.current.type == EventType.MouseUp)
                 _isDragging = false; 
 
             GUI.backgroundColor = originBackgroundColor;
-            _layersTotalHeight += layerRect.height + GUI.skin.box.margin.vertical;
         }
 
-        if (_isDragging && _draggingLayer.Value != null)
-            DrawLayerAtMouse(_draggingLayer.Value, Event.current.mousePosition);
+        if (Event.current.type == EventType.MouseDown && !clickedInsideLayer)
+            LayerEditor.ED.SelectedLayerIds.Clear();
 
         if (_isDragging && _draggingLayer.Value != null)
         {
+            DrawLayerAtMouse(_draggingLayer.Value, Event.current.mousePosition);
+
             foreach (var layerData in layerDatas)
             {
                 if (_draggingLayer.Value == layerData)
@@ -348,13 +356,46 @@ public class LayerWindow : EditorWindow
 
         }
 
-        Repaint();
-
-        BrushEditor.DeleteLayerIds();
-        BrushEditor.RestoreLayerIds();
+        LayerEditor.DeleteLayerIds();
+        LayerEditor.RestoreLayerIds();
         GUILayout.EndScrollView();
-        UpdateScrollView();
+
+        Repaint();
     }
+    
+    private void InsertControlLayerId(int id)
+    {
+        Undo.RecordObject(LayerEditor.ED, "Control Layer Selection");
+
+        if (LayerEditor.ED.SelectedLayerIds.Contains(id))
+            LayerEditor.ED.SelectedLayerIds.Remove(id);
+        else
+            LayerEditor.ED.SelectedLayerIds.Add(id);
+    }
+    private void InsertShiftLayerId(int id)
+    {
+        Undo.RecordObject(LayerEditor.ED, "Shift Layer Selection");
+
+        if (LayerEditor.ED.SelectedLayerIds.Any())
+        {
+            List<LayerData> layerDatas = LayerEditor.GetLayerOrders();
+            int firstSelectedIndex = layerDatas.FindIndex(layerData => LayerEditor.ED.SelectedLayerIds.Contains(layerData.Id));
+            int currentLayerIndex = layerDatas.FindIndex(layerData => layerData.Id == id);
+            int startIndex = Math.Min(firstSelectedIndex, currentLayerIndex);
+            int endIndex = Math.Max(firstSelectedIndex, currentLayerIndex);
+
+            LayerEditor.ED.SelectedLayerIds.Clear();
+
+            for (int i = startIndex; i <= endIndex; i++)
+                LayerEditor.ED.SelectedLayerIds.Add(layerDatas[i].Id);
+   
+        }
+        else
+        {
+            LayerEditor.ED.SelectedLayerIds.Add(id);
+        }
+    }
+
     private void DrawLayerAtMouse(LayerData layerData, Vector2 mousePosition)
     {
         GUI.color = new Color(GUI.color.r, GUI.color.g, GUI.color.b, 0.75f);
@@ -383,12 +424,12 @@ public class LayerWindow : EditorWindow
     {
         if (GUILayout.Button("Delete", GUILayout.Width(50)))
         {
-            int layerIndex = BrushEditor.LayerObjects.FirstOrDefault(x => x.Value == layer).Key;
-            BrushEditor.ToDeleteLayerIds.Add(layerIndex);
-            BrushEditor.EmptyLayerIds.Add(layerIndex);
+            int layerIndex = LayerEditor.LayerObjects.FirstOrDefault(x => x.Value == layer).Key;
+            LayerEditor.ToDeleteLayerIds.Add(layerIndex);
+            LayerEditor.EmptyLayerIds.Add(layerIndex);
 
             GUIUtility.keyboardControl = 0;
-            s_selectedLayerIndex = -1;
+            LayerEditor.ED.SelectedLayerIds.Clear();
             _isDragging = false;
 
             Undo.DestroyObjectImmediate(layer.gameObject);
@@ -412,8 +453,8 @@ public class LayerWindow : EditorWindow
             }
 
             Debug.Log("Layers has been reset.");
-            s_selectedLayerIndex = -1;
-            BrushEditor.Clear();
+            LayerEditor.Clear();
+            LayerEditor.ED.SelectedLayerIds.Clear();
             _isDragging = false;
         }
     }
@@ -429,25 +470,5 @@ public class LayerWindow : EditorWindow
             layerData
         );
     }
-    private void UpdateScrollView()
-    {
-        if (_scrollToNewLayer)
-        {
-            Transform cubeParent = BrushEditor.GetCubeParent();
 
-            int selectedIndex = cubeParent.childCount - 1 - s_selectedLayerIndex;
-
-            if (selectedIndex >= 0)
-            {
-                float elementHeight = 70;
-                float totalHeight = elementHeight * selectedIndex;
-                float halfWindowHeight = position.height * 0.5f;
-
-                _scrollPosition.y = Mathf.Clamp(totalHeight - halfWindowHeight, 0, Mathf.Max(0, _layersTotalHeight - position.height));
-            }
-            _scrollToNewLayer = false;
-            _isDragging = false;
-            Repaint();
-        }
-    }
 }

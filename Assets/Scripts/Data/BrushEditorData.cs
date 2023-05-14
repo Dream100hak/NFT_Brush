@@ -1,7 +1,7 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "CubePlacerEditorData", menuName = "CubePlacerEditor/Data", order = 1)]
-public class CubePlacerEditorData : ScriptableObject
+[CreateAssetMenu(fileName = "BrushEditorData", menuName = "BrushEditorData/Data", order = 1)]
+public class BrushEditorData : ScriptableObject
 {
     public float CubeSize = 0.5f;
     public float PlacementDistance  = 1.0f;
@@ -20,7 +20,6 @@ public class CubePlacerEditorData : ScriptableObject
     public bool BlackholeEnabled= false;
     public float Blackhole_AttractionForce = 1.0f;
 
-
     public bool SnowEnabled = false;
     public float Snow_SwayIntensity = 1.0f;
     public float Snow_SwayAmount = 0.1f;
@@ -28,6 +27,5 @@ public class CubePlacerEditorData : ScriptableObject
     public bool SnowSpawnEnabled = false;
     public float SnowSpawn_SwayIntensity = 1.0f;
     public float SnowSpawn_SwayAmount = 0.1f;
-
 
 }

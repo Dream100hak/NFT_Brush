@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Xml;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -27,6 +28,8 @@ public class DrawingWindow : EditorWindow
     private Vector3 _initialMousePos;
     private Vector3 _lastPlacedPos;
 
+    private bool _bStart;
+
     [MenuItem("Photoshop/Drawing")]
     public static void ShowWindow()
     {
@@ -37,8 +40,12 @@ public class DrawingWindow : EditorWindow
     {
         _gridTexture = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Resources/Textures/Grid.png");
 
-        SetResolution(1920, 1080);
-
+        if(_bStart == false)
+        {
+            SetResolution(1920, 1080);
+            _bStart = true;
+        }
+        
         EditorSceneManager.sceneOpened += OnSceneOpened;
         EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
 
@@ -193,7 +200,7 @@ public class DrawingWindow : EditorWindow
                             BrushEditor.PlaceCube(cubePosition);
                         }
                     }
-                    BrushEditor.CurrentLayer = null;
+                    LayerEditor.CurrentLayer = null;
                     _initialMousePos = Vector3.zero;
                 }
                 else if (e.type == EventType.MouseDrag && e.button == 0 && !shiftPressed)
