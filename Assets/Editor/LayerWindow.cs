@@ -5,7 +5,7 @@ using UnityEngine;
 using System;
 using System.Linq;
 using Unity.VisualScripting;
-using UnityEngine.UI;
+
 
 public class LayerWindow : EditorWindow
 {
@@ -68,7 +68,6 @@ public class LayerWindow : EditorWindow
 
             childLayer.name = name;
 
-            //Dragged Undo check
             if(_prevLayerIndexs.ContainsKey(id))
             {
                 childLayer.SetSiblingIndex(_prevLayerIndexs[id]);
@@ -183,12 +182,22 @@ public class LayerWindow : EditorWindow
 
         if (BrushEditor.GetCubeParent() != null)
             MakeLayerList();
-        
-        GUILayout.Space(20);
-        DeleteAllLayers();
-        GUILayout.Space(20);
 
+        Rect seperateRect = GUILayoutUtility.GetLastRect();
+        seperateRect.y += seperateRect.height;
+        seperateRect.height = 3;
+
+        EditorGUI.DrawRect(seperateRect, new Color(0.3f, 0.3f, 0.3f));
+
+        GUILayout.Space(10);
+        GUILayout.BeginHorizontal(GUI.skin.box);
+
+        GUILayout.FlexibleSpace();
         CreateNewLayer();
+        DeleteSelectedLayer();
+  
+        GUILayout.EndHorizontal();
+
     }
     private static void CreateCanvas()
     {
@@ -196,7 +205,7 @@ public class LayerWindow : EditorWindow
         {
             Camera main = Camera.main;
             main.clearFlags = CameraClearFlags.SolidColor;
-            main.backgroundColor = Color.black;
+            main.backgroundColor = Color.clear;
             main.orthographic = true;
             main.orthographicSize = 10.2f;
             main.transform.position = new Vector3(0, 0, -10);
@@ -217,7 +226,10 @@ public class LayerWindow : EditorWindow
     }
     private void CreateNewLayer()
     {
-        if (GUILayout.Button("Create New Layer", GUILayout.Height(60)))
+        Texture2D icon = Resources.Load<Texture2D>("Textures/Icon/LayerIcon"); // 휴지통 이미지를 불러옵니다. 이 경로는 이미지의 실제 위치에 따라 달라집니다.
+        GUIContent btnContent = new GUIContent(icon); // 휴지통 이미지를 버튼의 내용으로 설정합니다.
+
+        if (GUILayout.Button(btnContent, GUILayout.Width(40), GUILayout.Height(40))) // 버튼의 크기를 100x100으로 설정합니다.
         {
             LayerEditor.ED.SelectedLayerIds.Clear();
             LayerEditor.CreateNewLayer();
@@ -260,7 +272,7 @@ public class LayerWindow : EditorWindow
             {
                 if(id == i)
                 {
-                    GUI.backgroundColor = Color.gray;
+                    GUI.backgroundColor = new Color32(200,200,200,255);
                     break;
                 }     
             }
@@ -272,7 +284,6 @@ public class LayerWindow : EditorWindow
             GUI.DrawTexture(imageRect, layerSnapshot, ScaleMode.ScaleToFit);
             ChangeLayerName(layerData); // 이름 변경 관련
             GUILayout.FlexibleSpace();
-            OneDeleteLayer(layer); // 레이어 삭제 관련
 
             GUILayout.EndHorizontal();
 
@@ -380,6 +391,7 @@ public class LayerWindow : EditorWindow
         LayerEditor.RestoreLayerIds();
         GUILayout.EndScrollView();
 
+
         Repaint();
     }
     
@@ -408,7 +420,6 @@ public class LayerWindow : EditorWindow
 
             for (int i = startIndex; i <= endIndex; i++)
                 LayerEditor.ED.SelectedLayerIds.Add(layerDatas[i].Id);
-   
         }
         else
         {
@@ -439,46 +450,45 @@ public class LayerWindow : EditorWindow
 
         GUI.color = Color.white;
     }
-
-    private void OneDeleteLayer(Transform layer)
+    private void DeleteSelectedLayer()
     {
-        if (GUILayout.Button("Delete", GUILayout.Width(50)))
+        Texture2D icon = Resources.Load<Texture2D>("Textures/Icon/DeleteIcon"); // 휴지통 이미지를 불러옵니다. 이 경로는 이미지의 실제 위치에 따라 달라집니다.
+        GUIContent btnContent = new GUIContent(icon); // 휴지통 이미지를 버튼의 내용으로 설정합니다.
+
+        GUI.enabled = LayerEditor.ED.SelectedLayerIds.Count > 0;
+
+        if (GUILayout.Button(btnContent, GUILayout.Width(40), GUILayout.Height(40)))
         {
-            int layerIndex = LayerEditor.LayerObjects.FirstOrDefault(x => x.Value == layer).Key;
-            LayerEditor.ToDeleteLayerIds.Add(layerIndex);
-            LayerEditor.EmptyLayerIds.Add(layerIndex);
-
-            GUIUtility.keyboardControl = 0;
-            LayerEditor.ED.SelectedLayerIds.Clear();
-            _isDragging = false;
-
-            Undo.DestroyObjectImmediate(layer.gameObject);
-            Repaint();
-        }
-    }
-    private void DeleteAllLayers()
-    {
-        if (GUILayout.Button("Delete All Layers"))
-        {
-            GameObject canvas = GameObject.Find("Canvas");
-
-            if (canvas != null)
+            foreach(int id in LayerEditor.ED.SelectedLayerIds)
             {
-                Transform[] children = canvas.GetComponentsInChildren<Transform>();
+                Transform layer = LayerEditor.LayerObjects[id];
+                LayerEditor.ToDeleteLayerIds.Add(id);
+                LayerEditor.EmptyLayerIds.Add(id);
 
-                List<Transform> targetTransforms = children.Where(child => child.gameObject != canvas && child.gameObject.name != "Cube").ToList();
-
-                foreach (Transform target in targetTransforms)
-                    Undo.DestroyObjectImmediate(target.gameObject);
+                Undo.DestroyObjectImmediate(layer.gameObject);
             }
 
-            Debug.Log("Layers has been reset.");
-            LayerEditor.Clear();
             LayerEditor.ED.SelectedLayerIds.Clear();
-            _isDragging = false;
-        }
-    }
 
+            var remainingLayerObjects = LayerEditor.LayerObjects
+                .Where(x => x.Value != null)
+                .OrderByDescending(x => x.Value.GetComponent<LayerData>().CreationTimestamp);
+
+            if (remainingLayerObjects.Any())
+            {
+                int topLayerId = remainingLayerObjects.First().Key;
+                LayerEditor.ED.SelectedLayerIds.Add(topLayerId); 
+            }
+
+            GUIUtility.keyboardControl = 0;
+            _isDragging = false;
+
+            Repaint();
+        }
+
+        GUI.enabled = true;
+    }
+   
     private void ChangeLayerName(LayerData layerData)
     {
         string layerName = layerData.Name;

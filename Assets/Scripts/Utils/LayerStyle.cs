@@ -11,10 +11,24 @@ using UnityEditor;
 public class LayerStyle 
 {
 #if UNITY_EDITOR
+    public static GUIStyle SetToggleTabStyle()
+    {
+        // GUI 스타일 객체 생성
+        GUIStyle toggleStyle = new GUIStyle(GUI.skin.toggle);
+        toggleStyle.fixedWidth = 40;
+        toggleStyle.fixedHeight = 40;
+        toggleStyle.alignment = TextAnchor.MiddleLeft;
+        toggleStyle.contentOffset = new Vector2(-10, 0);
+        toggleStyle.fontStyle = FontStyle.Normal;
+
+        toggleStyle.normal.background = Resources.Load<Texture2D>("Textures/Icon/Tab");
+        toggleStyle.onNormal.background = Resources.Load<Texture2D>("Textures/Icon/TabBlack");
+
+        return toggleStyle;
+    }
     public static GUIStyle SetToggleBoxStyle()
     {
         // GUI 색상 변경
-  
         GUIStyle toggleBoxStyle = new GUIStyle(GUI.skin.box);
         toggleBoxStyle.normal.background = EditorGUIUtility.whiteTexture;
         toggleBoxStyle.normal.textColor = Color.white;

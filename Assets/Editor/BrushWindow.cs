@@ -10,33 +10,37 @@ public class BrushWindow : EditorWindow
     private bool _showBrushSettings = true;
     private bool _showBrushEffect = true;
 
+    private GUIStyle _tabBtnStyle = null;
+
     [MenuItem("Photoshop/Brush")]
     public static void ShowWindow()
     {
        GetWindow<BrushWindow>("Brush");
     }
 
+
     public void OnGUI()
     {
-        _showBrushSettings = EditorGUILayout.BeginFoldoutHeaderGroup(_showBrushSettings, "브러쉬 세팅");
+        if (_tabBtnStyle == null)
+            _tabBtnStyle = LayerStyle.SetToggleTabStyle();
+
+        _showBrushSettings = GUI.Toggle(new Rect(0, 10, 40, 40), _showBrushSettings, "설정", _tabBtnStyle);
+
         if (_showBrushSettings)
         {
-            GUILayout.Space(5);
-
+            GUILayout.Space(60);
+            _showBrushEffect = false;
             // 기본 옵션 [ 사이즈 / 간격 / 색상]
             BrushEditor.ED.CubeSize = Utils.EditPropertyWithUndo("크기", BrushEditor.ED.CubeSize, newSize => BrushEditor.ED.CubeSize = newSize, (label, value) => EditorGUILayout.Slider(label, value, 0.1f, 2f), BrushEditor.ED);
             BrushEditor.ED.PlacementDistance = Utils.EditPropertyWithUndo("간격", BrushEditor.ED.PlacementDistance, newDistance => BrushEditor.ED.PlacementDistance = newDistance, (label, value) => EditorGUILayout.Slider(label, value, 0.1f, 1f), BrushEditor.ED);
             BrushEditor.ED.CubeColor = Utils.EditPropertyWithUndo("색상", BrushEditor.ED.CubeColor, newColor => BrushEditor.ED.CubeColor = newColor, (label, value) => EditorGUILayout.ColorField(label, value), BrushEditor.ED);
         }
-        EditorGUILayout.EndFoldoutHeaderGroup();
+        _showBrushEffect = GUI.Toggle(new Rect(40, 10, 40, 40), _showBrushEffect, "효과", _tabBtnStyle);
 
-
-        GUILayout.Space(5);
-        _showBrushEffect = EditorGUILayout.BeginFoldoutHeaderGroup(_showBrushEffect, "브러쉬 효과");
-
-        if(_showBrushEffect)
+        if (_showBrushEffect)
         {
-            GUILayout.Space(5);
+            _showBrushSettings = false;
+            GUILayout.Space(60);
             Color originalColor = GUI.color;
 
             GUILayout.BeginHorizontal();
@@ -131,7 +135,6 @@ public class BrushWindow : EditorWindow
                 DrawWhiteSeparatorLine(0, 1.7f);
             }
         }
-        EditorGUILayout.EndFoldoutHeaderGroup();
     }
 
     void DrawWhiteSeparatorLine(float space, float height)

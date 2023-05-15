@@ -33,7 +33,7 @@ public class DrawingWindow : EditorWindow
     [MenuItem("Photoshop/Drawing")]
     public static void ShowWindow()
     {
-        GetWindow<BrushWindow>("Drawing");
+        GetWindow<DrawingWindow>("Drawing");
     }
 
     private void OnEnable()
@@ -105,10 +105,10 @@ public class DrawingWindow : EditorWindow
         _captureCamera.fieldOfView = Camera.main.fieldOfView;
         _captureCamera.nearClipPlane = Camera.main.nearClipPlane;
         _captureCamera.farClipPlane = Camera.main.farClipPlane;
-        _captureCamera.orthographic = Camera.main.orthographic;
+        _captureCamera.orthographic = true;
         _captureCamera.orthographicSize = Camera.main.orthographicSize;
-        _captureCamera.clearFlags = Camera.main.clearFlags;
-        _captureCamera.backgroundColor = Camera.main.backgroundColor;
+        _captureCamera.clearFlags = CameraClearFlags.SolidColor;
+        _captureCamera.backgroundColor = Color.clear;
         _captureCamera.cullingMask = Camera.main.cullingMask;
         _captureCamera.depth = Camera.main.depth;
 
