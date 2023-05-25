@@ -18,6 +18,12 @@ public class SnowSpawner : MonoBehaviour
 
     private float _timeSinceLastSpawn;
 
+    [SerializeField]
+    private E_Direction _direction = E_Direction.Down;
+
+    [SerializeField]
+    private bool _randColor = false;
+
     private void Awake()
     {
         _spawnInterval = Random.Range(3, 10f);
@@ -46,7 +52,22 @@ public class SnowSpawner : MonoBehaviour
 
         if (parentRenderer != null && cubeSnowRenderer != null)
         {
-            cubeSnowRenderer.material = parentRenderer.material;
+            // Cube »ö±òÀ» ·£´ýÀ¸·Î º¯°æ
+            if (_randColor && Random.value <= 0.01f)
+            {
+                Color orange = new Color(1.0f, 0.5f, 0.0f);
+                Color[] colors = { Color.red, orange, Color.yellow, Color.blue };
+                int randomIndex = Random.Range(0, colors.Length);
+                Color randomColor = colors[randomIndex];
+
+                Material newMaterial = new Material(parentRenderer.material);
+                newMaterial.color = randomColor;
+                cubeSnowRenderer.material = newMaterial;
+            }
+            else
+            {
+                cubeSnowRenderer.material = parentRenderer.material;
+            }
         }
 
         if(GetComponent<CubeRotator>().enabled)
@@ -58,6 +79,7 @@ public class SnowSpawner : MonoBehaviour
         newCubeSnow.GetComponent<CubeSnow>().enabled = true;
         newCubeSnow.GetComponent<CubeSnow>().SwayAmount = SwayAmount;
         newCubeSnow.GetComponent<CubeSnow>().SwayIntensity = _swayIntensity;
+        newCubeSnow.GetComponent<CubeSnow>().Direction = _direction;
         newCubeSnow.GetComponent<CubeSnow>().DestroyMode = true;
 
         newCubeSnow.GetComponent<BoxCollider>().isTrigger = false;

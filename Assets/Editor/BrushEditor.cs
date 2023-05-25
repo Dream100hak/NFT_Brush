@@ -75,6 +75,8 @@ public class BrushEditor
 
             }
 
+            LayerEditor.LayerObjects[selectedLayerId].GetComponent<LayerData>().HasChanged = true;
+
             Renderer renderer = cube.GetComponent<Renderer>();
             Material material = new Material(renderer.sharedMaterial);
             material.color = s_editorData.CubeColor;
@@ -90,6 +92,9 @@ public class BrushEditor
         {
             GameObject cube = hitInfo.collider.gameObject;
             Undo.DestroyObjectImmediate(cube);
+
+            //TODO : ID로 관리 필요
+            cube.transform.parent.GetComponent<LayerData>().HasChanged = true;
         }
     }
 

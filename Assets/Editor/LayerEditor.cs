@@ -92,19 +92,66 @@ public class LayerEditor
             newLayerId = s_generateId;
         }
 
+        int prevChildCount = BrushEditor.CubeParent.childCount;
+
         GameObject newLayer = new GameObject("새 레이어 " + newLayerId.ToString("00"));
         newLayer.AddComponent(typeof(LayerData));
         newLayer.transform.SetParent(BrushEditor.CubeParent);
         newLayer.transform.SetSiblingIndex(0);
 
+        newLayer.transform.localPosition = new Vector3(0, 0, -0.01f * prevChildCount);       
+        
         newLayer.GetComponent<LayerData>().Id = newLayerId;
         newLayer.GetComponent<LayerData>().CreationTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         newLayer.GetComponent<LayerData>().Name = newLayer.name;
+        newLayer.GetComponent<LayerData>().HasChanged = true;
 
         LayerObjects.Add(newLayerId, newLayer.transform);
         s_currentLayer = newLayer.transform;
 
         Undo.RegisterCreatedObjectUndo(s_currentLayer.gameObject, "Create Layer");
+
+        ED.SelectedLayerIds.Add(newLayerId);
+    }
+    public static void CreateCloneLayer(int originalId, Vector3 direction)
+    {
+        // Ensure the original layer exists
+        if (!LayerObjects.ContainsKey(originalId))
+            return;
+
+        Transform originalLayer = LayerObjects[originalId];
+
+        int newLayerId;
+        if (s_emptyLayerIds.Count > 0)
+        {
+            newLayerId = s_emptyLayerIds.First();
+            s_emptyLayerIds.Remove(newLayerId);
+        }
+        else
+        {
+            LayerGenerateId();
+            newLayerId = s_generateId;
+        }
+
+        int prevChildCount = BrushEditor.CubeParent.childCount;
+
+        GameObject newLayer = GameObject.Instantiate(originalLayer.gameObject); // Clone the original layer
+        newLayer.name = originalLayer.name + " Copy"; // Name the new layer
+        newLayer.transform.SetParent(BrushEditor.CubeParent); // Set parent
+        newLayer.transform.SetSiblingIndex(0); // Set sibling index
+
+        newLayer.transform.localPosition = originalLayer.localPosition + direction * BrushEditor.ED.PlacementDistance;
+
+        // Set layer data
+        newLayer.GetComponent<LayerData>().Id = newLayerId;
+        newLayer.GetComponent<LayerData>().CreationTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        newLayer.GetComponent<LayerData>().Name = newLayer.name;
+        newLayer.GetComponent<LayerData>().HasChanged = true;
+
+        LayerObjects.Add(newLayerId, newLayer.transform);
+        s_currentLayer = newLayer.transform;
+
+        Undo.RegisterCreatedObjectUndo(s_currentLayer.gameObject, "Create Copy Layer");
 
         ED.SelectedLayerIds.Add(newLayerId);
     }

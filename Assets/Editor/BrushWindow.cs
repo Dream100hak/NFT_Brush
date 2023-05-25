@@ -18,7 +18,6 @@ public class BrushWindow : EditorWindow
        GetWindow<BrushWindow>("Brush");
     }
 
-
     public void OnGUI()
     {
         if (_tabBtnStyle == null)

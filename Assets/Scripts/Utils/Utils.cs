@@ -50,4 +50,10 @@ public class Utils
     }
 
 #endif
+
+    public static Vector3 SetZVectorZero(Vector3 vec)
+    {
+        vec.z = 0;
+        return vec;
+    }
 }

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 public class LayerData : MonoBehaviour
@@ -38,6 +39,51 @@ public class LayerData : MonoBehaviour
                 _layerRect = value;
             }
 
+        }
+    }
+
+    [SerializeField]
+    private int _layerOrder = 0;
+
+    public int LayerOrder
+    {
+        get => _layerOrder;
+        set
+        {
+            if (_layerOrder != value)
+            {
+                _layerOrder = value;
+            }
+        }
+    }
+
+    [SerializeField]
+    private bool _hasChanged = false;
+
+    public bool HasChanged
+    {
+        get => _hasChanged;
+        set
+        {
+            if (_hasChanged != value)
+            {
+                _hasChanged = value;
+            }
+        }
+    }
+
+    [SerializeField]
+    private Texture2D _snapShot;
+
+    public Texture2D SnapShot
+    {
+        get => _snapShot;
+        set
+        {
+            if (_snapShot != value)
+            {
+                _snapShot = value;
+            }
         }
     }
 }

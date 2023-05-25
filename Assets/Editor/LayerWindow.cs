@@ -5,8 +5,6 @@ using UnityEngine;
 using System;
 using System.Linq;
 using Unity.VisualScripting;
-
-
 public class LayerWindow : EditorWindow
 {
     private Texture2D _gridTexture;
@@ -72,6 +70,8 @@ public class LayerWindow : EditorWindow
             {
                 childLayer.SetSiblingIndex(_prevLayerIndexs[id]);
             }
+
+            childLayer.GetComponent<LayerData>().HasChanged = true;
         }
 
         _prevLayerIndexs.Clear();
@@ -111,10 +111,15 @@ public class LayerWindow : EditorWindow
             BrushEditor.EnablePlacing();
         }
     }
-    public Texture2D CaptureLayerSnapshot(Transform layer)
+    public Texture2D CaptureLayerSnapshot(LayerData layer)
     {
-        int width = 64;
-        int height = 64;
+        if (layer.HasChanged == false)
+        {
+            return layer.SnapShot;
+        }
+
+        int width = 50;
+        int height = 50;
 
         Camera tempCamera = new GameObject("TempCamera").AddComponent<Camera>();
         Camera mainCamera = Camera.main;
@@ -136,7 +141,7 @@ public class LayerWindow : EditorWindow
         {
             Transform childLayer = cubeParent.GetChild(i);
             layerStates.Add(childLayer.gameObject.activeSelf);
-            if (childLayer != layer)
+            if (childLayer != layer.transform)
             {
                 childLayer.gameObject.SetActive(false);
             }
@@ -170,6 +175,10 @@ public class LayerWindow : EditorWindow
             Transform childLayer = cubeParent.GetChild(i);
             childLayer.gameObject.SetActive(layerStates[i]);
         }
+
+        layer.HasChanged = false;
+        layer.SnapShot = snapshot;
+
         return snapshot;
     }
     public void OnGUI()
@@ -194,6 +203,7 @@ public class LayerWindow : EditorWindow
 
         GUILayout.FlexibleSpace();
         CreateNewLayer();
+        DisplayCopyButtons(); // 레이어 복제 버튼 추가
         DeleteSelectedLayer();
   
         GUILayout.EndHorizontal();
@@ -279,7 +289,7 @@ public class LayerWindow : EditorWindow
 
             GUILayout.BeginHorizontal(GUI.skin.box);
 
-            Texture2D layerSnapshot = CaptureLayerSnapshot(layer); // 스냅샷 관련
+            Texture2D layerSnapshot = CaptureLayerSnapshot(layerData); // 스냅샷 관련
             Rect imageRect = GUILayoutUtility.GetRect(50, 50);
             GUI.DrawTexture(imageRect, layerSnapshot, ScaleMode.ScaleToFit);
             ChangeLayerName(layerData); // 이름 변경 관련
@@ -391,7 +401,6 @@ public class LayerWindow : EditorWindow
         LayerEditor.RestoreLayerIds();
         GUILayout.EndScrollView();
 
-
         Repaint();
     }
     
@@ -436,7 +445,7 @@ public class LayerWindow : EditorWindow
         GUILayout.BeginArea(new Rect(mousePosition.x - width / 2, mousePosition.y - height / 8, width, height));
         GUILayout.BeginHorizontal(GUI.skin.box);
 
-        Texture2D snapshot = CaptureLayerSnapshot(layerData.transform); // 스냅샷 관련
+        Texture2D snapshot = CaptureLayerSnapshot(layerData); // 스냅샷 관련
 
         Rect imageRect = GUILayoutUtility.GetRect(50, 50);
         GUI.DrawTexture(imageRect, snapshot, ScaleMode.ScaleToFit);
@@ -449,6 +458,46 @@ public class LayerWindow : EditorWindow
         GUILayout.EndArea();
 
         GUI.color = Color.white;
+    }
+    private void DisplayCopyButtons()
+    {
+        // 원본 복사 버튼
+        Texture2D icon = Resources.Load<Texture2D>("Textures/Icon/CopyIcon");
+        GUIContent btnContent = new GUIContent(icon);
+        GUI.enabled = LayerEditor.ED.SelectedLayerIds.Count > 0;
+
+        if (GUILayout.Button(btnContent, GUILayout.Width(40), GUILayout.Height(40)))
+            CopySelectedLayer(Vector3.zero);
+
+        if (GUILayout.Button("↑", GUILayout.Width(40), GUILayout.Height(40)))
+            CopySelectedLayer(Vector3.up);
+        
+        if (GUILayout.Button("↓", GUILayout.Width(40), GUILayout.Height(40)))
+            CopySelectedLayer(Vector3.down);      
+        if (GUILayout.Button("←", GUILayout.Width(40), GUILayout.Height(40)))
+            CopySelectedLayer(Vector3.left);
+        
+        if (GUILayout.Button("→", GUILayout.Width(40), GUILayout.Height(40)))
+            CopySelectedLayer(Vector3.right);
+
+        GUI.enabled = true;
+    }
+
+    private void CopySelectedLayer(Vector3 direction)
+    {
+    
+
+        List<int> selectedIdList = new List<int>(LayerEditor.ED.SelectedLayerIds);
+
+        foreach (int id in selectedIdList)
+            LayerEditor.CreateCloneLayer(id, direction);
+
+        //기존 아이디 삭제
+        foreach (int id in selectedIdList)
+            LayerEditor.ED.SelectedLayerIds.Remove(id);
+
+        GUIUtility.keyboardControl = 0;
+
     }
     private void DeleteSelectedLayer()
     {
@@ -496,7 +545,7 @@ public class LayerWindow : EditorWindow
             "",
             layerName,
             newName => layerData.Name = newName,
-            (label, value) => EditorGUILayout.TextField(value, GUILayout.Width(120)),
+            (label, value) => EditorGUILayout.TextField(value, GUILayout.Width(200)),
             layerData
         );
     }
