@@ -46,7 +46,7 @@ public class BrushWindow : EditorWindow
             BrushEditor.ED.RotatorEnabled = Utils.EditPropertyWithUndo("회전", BrushEditor.ED.RotatorEnabled, enbled => BrushEditor.ED.RotatorEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), BrushEditor.ED, 120f);
             GUILayout.EndHorizontal();
 
-            DrawWhiteSeparatorLine(5, 1.7f);
+            LayerStyle.DrawSeparatorLine(5, 1.7f, new Color(0.3f, 0.3f, 0.3f, 0.5f));
 
             if (BrushEditor.ED.RotatorEnabled)
             {
@@ -55,7 +55,7 @@ public class BrushWindow : EditorWindow
                 BrushEditor.ED.Random_RotSpeed = Utils.EditPropertyWithUndo("속도", BrushEditor.ED.Random_RotSpeed, speed => BrushEditor.ED.Random_RotSpeed = speed, (label, value) => EditorGUILayout.FloatField(label, value), BrushEditor.ED, 120f);
 
                 EditorGUILayout.EndVertical();
-                DrawWhiteSeparatorLine(0, 1.7f);
+                LayerStyle.DrawSeparatorLine(0, 1.7f, new Color(0.3f, 0.3f, 0.3f, 0.5f));
             }
 
             GUI.color = originalColor;
@@ -63,7 +63,7 @@ public class BrushWindow : EditorWindow
 
             BrushEditor.ED.MoverEnabled = Utils.EditPropertyWithUndo("이동", BrushEditor.ED.MoverEnabled, enbled => BrushEditor.ED.MoverEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), BrushEditor.ED, 120f);
 
-            DrawWhiteSeparatorLine(5, 1.7f);
+            LayerStyle.DrawSeparatorLine(5, 1.7f, new Color(0.3f, 0.3f, 0.3f, 0.5f));
 
             if (BrushEditor.ED.MoverEnabled)
             {
@@ -103,7 +103,7 @@ public class BrushWindow : EditorWindow
                 GUILayout.EndHorizontal();
                 GUI.color = originalColor;
 
-                DrawWhiteSeparatorLine(0, 1.7f);
+                LayerStyle.DrawSeparatorLine(0, 1.7f, new Color(0.3f, 0.3f, 0.3f, 0.5f));
 
                 CheckBrushEffectEnabled(prevStraightEnbled, prevBlackholeEnbled, prevSnowEnabled);
 
@@ -112,7 +112,7 @@ public class BrushWindow : EditorWindow
             GUILayout.Space(5);
 
             BrushEditor.ED.NatureEnabled = Utils.EditPropertyWithUndo("자연", BrushEditor.ED.NatureEnabled, enbled => BrushEditor.ED.NatureEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), BrushEditor.ED, 120f);
-            DrawWhiteSeparatorLine(5, 1.7f);
+            LayerStyle.DrawSeparatorLine(5, 1.7f, new Color(0.3f, 0.3f, 0.3f, 0.5f));
 
             if (BrushEditor.ED.NatureEnabled)
             {
@@ -131,23 +131,12 @@ public class BrushWindow : EditorWindow
                 GUILayout.EndHorizontal();
                 GUI.color = originalColor;
 
-                DrawWhiteSeparatorLine(0, 1.7f);
+                LayerStyle.DrawSeparatorLine(0, 1.7f, new Color(0.3f, 0.3f, 0.3f, 0.5f));
             }
         }
     }
 
-    void DrawWhiteSeparatorLine(float space, float height)
-    {
-        GUILayout.Space(space);
-
-        GUIStyle separatorStyle = new GUIStyle(GUI.skin.box);
-        separatorStyle.normal.background = EditorGUIUtility.whiteTexture;
-
-        Color originalColor = GUI.color;
-        GUI.color = new Color(0.3f, 0.3f, 0.3f, 0.5f);
-        GUILayout.Box("", separatorStyle, GUILayout.ExpandWidth(true), GUILayout.Height(height));
-        GUI.color = originalColor;
-    }
+  
  
     private void CheckBrushEffectEnabled(bool prevStraightEnabled, bool prevBlackholeEnabled, bool prevSnowEnabled)
     {

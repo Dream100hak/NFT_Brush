@@ -86,4 +86,9 @@ public class LayerData : MonoBehaviour
             }
         }
     }
+
+    private void Awake()
+    {
+        _hasChanged = true;
+    }
 }

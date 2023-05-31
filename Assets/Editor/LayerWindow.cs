@@ -16,8 +16,10 @@ public class LayerWindow : EditorWindow
 
     private Dictionary<int, int> _prevLayerIndexs = new Dictionary<int, int>();
 
-    private List<int> _layerIndexList = new List<int>();
+    private bool _multiSelected = false;
 
+
+    private List<int> _layerIndexList = new List<int>();
     private DateTime _dragStartTime;
 
     [MenuItem("Photoshop/Layer")]
@@ -43,13 +45,17 @@ public class LayerWindow : EditorWindow
         EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
         Undo.undoRedoPerformed -= OnUndoRedoPerformed;
         Debug.Log("Unsubscribed from Undo.undoRedoPerformed");
-
-        Debug.Log("해제");
     }
 
     private void OnUndoRedoPerformed()
     {
         Debug.Log("OnUndoRedoPerformed called");
+
+        if(_multiSelected)
+        {
+            _multiSelected = false;
+            return;
+        }
 
         Transform cubeParent = BrushEditor.GetCubeParent();
         Dictionary<int, Transform> layers = new Dictionary<int, Transform>();
@@ -113,7 +119,7 @@ public class LayerWindow : EditorWindow
     }
     public Texture2D CaptureLayerSnapshot(LayerData layer)
     {
-        if (layer.HasChanged == false)
+        if (layer.HasChanged == false && layer.SnapShot != null)
         {
             return layer.SnapShot;
         }
@@ -250,7 +256,6 @@ public class LayerWindow : EditorWindow
     private void MakeLayerList()
     {
         bool clickedInsideLayer = false;
-
         _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, false, true);
 
         _layerIndexList.Clear();
@@ -282,12 +287,12 @@ public class LayerWindow : EditorWindow
             {
                 if(id == i)
                 {
-                    GUI.backgroundColor = new Color32(200,200,200,255);
+                    GUI.backgroundColor = new Color32(100,100,100,255);
                     break;
                 }     
             }
 
-            GUILayout.BeginHorizontal(GUI.skin.box);
+            GUILayout.BeginHorizontal(LayerStyle.SetWhiteSkinBoxStyle());
 
             Texture2D layerSnapshot = CaptureLayerSnapshot(layerData); // 스냅샷 관련
             Rect imageRect = GUILayoutUtility.GetRect(50, 50);
@@ -340,6 +345,9 @@ public class LayerWindow : EditorWindow
                 _isDragging = false; 
 
             GUI.backgroundColor = originBackgroundColor;
+            LayerStyle.DrawSeparatorLine(-3, 1.7f, new Color(0.1f, 0.1f, 0.1f, 0.5f));
+
+            GUILayout.Space(-5);
         }
 
         if (Event.current.type == EventType.MouseDown && !clickedInsideLayer)
@@ -362,45 +370,12 @@ public class LayerWindow : EditorWindow
             }
         }
 
-         if (Event.current.type == EventType.MouseUp && _insertLayer.Value != null)
-        {
-            _prevLayerIndexs.Clear();
-
-            LayerData draggedLayerData = _draggingLayer.Value;
-            LayerData insertLayerData = _insertLayer.Value;
-
-            UnityEngine.Object[] recordObjs = new UnityEngine.Object[] { draggedLayerData, insertLayerData };
-            Undo.RecordObjects(recordObjs, "Dragged Layer");
-
-            _insertLayer = new KeyValuePair<int, LayerData>();
-            _draggingLayer = new KeyValuePair<int, LayerData>();
-
-            long insertTime = insertLayerData.CreationTimestamp;
-            Rect insertRect = insertLayerData.LayerRect;
-            int insertIndex = insertLayerData.transform.GetSiblingIndex();
-            int draggedIndex = draggedLayerData.transform.GetSiblingIndex();
-
-            insertLayerData.CreationTimestamp = draggedLayerData.CreationTimestamp;
-            draggedLayerData.CreationTimestamp = insertTime;
-
-            insertLayerData.LayerRect = draggedLayerData.LayerRect;
-            draggedLayerData.LayerRect = insertRect;
-
-            insertLayerData.transform.SetSiblingIndex(draggedIndex);
-            draggedLayerData.transform.SetSiblingIndex(insertIndex);
-
-            _prevLayerIndexs.Add(draggedLayerData.Id, draggedIndex);
-            _prevLayerIndexs.Add(insertLayerData.Id, insertIndex);
- 
-            GUIUtility.keyboardControl = 0;
-            Event.current.Use();
-
-        }
-
+        if (Event.current.type == EventType.MouseUp && _insertLayer.Value != null)
+            MoveSelectedLayer();
+  
         LayerEditor.DeleteLayerIds();
         LayerEditor.RestoreLayerIds();
         GUILayout.EndScrollView();
-
         Repaint();
     }
     
@@ -412,6 +387,13 @@ public class LayerWindow : EditorWindow
             LayerEditor.ED.SelectedLayerIds.Remove(id);
         else
             LayerEditor.ED.SelectedLayerIds.Add(id);
+
+        if (LayerEditor.ED.SelectedLayerIds.Count > 1)
+        {
+   
+            _multiSelected = true;
+        }
+            
     }
     private void InsertShiftLayerId(int id)
     {
@@ -434,6 +416,9 @@ public class LayerWindow : EditorWindow
         {
             LayerEditor.ED.SelectedLayerIds.Add(id);
         }
+
+        if (LayerEditor.ED.SelectedLayerIds.Count > 1)
+            _multiSelected = true;    
     }
 
     private void DrawLayerAtMouse(LayerData layerData, Vector2 mousePosition)
@@ -444,16 +429,11 @@ public class LayerWindow : EditorWindow
         float height = 200;
         GUILayout.BeginArea(new Rect(mousePosition.x - width / 2, mousePosition.y - height / 8, width, height));
         GUILayout.BeginHorizontal(GUI.skin.box);
-
         Texture2D snapshot = CaptureLayerSnapshot(layerData); // 스냅샷 관련
-
         Rect imageRect = GUILayoutUtility.GetRect(50, 50);
         GUI.DrawTexture(imageRect, snapshot, ScaleMode.ScaleToFit);
-
-        ChangeLayerName(layerData); // 이름 변경 관련
-
+        ChangeLayerName(layerData); 
         GUILayout.FlexibleSpace();
-
         GUILayout.EndHorizontal();
         GUILayout.EndArea();
 
@@ -485,24 +465,20 @@ public class LayerWindow : EditorWindow
 
     private void CopySelectedLayer(Vector3 direction)
     {
-    
-
         List<int> selectedIdList = new List<int>(LayerEditor.ED.SelectedLayerIds);
 
         foreach (int id in selectedIdList)
             LayerEditor.CreateCloneLayer(id, direction);
 
-        //기존 아이디 삭제
         foreach (int id in selectedIdList)
             LayerEditor.ED.SelectedLayerIds.Remove(id);
 
         GUIUtility.keyboardControl = 0;
-
     }
     private void DeleteSelectedLayer()
     {
-        Texture2D icon = Resources.Load<Texture2D>("Textures/Icon/DeleteIcon"); // 휴지통 이미지를 불러옵니다. 이 경로는 이미지의 실제 위치에 따라 달라집니다.
-        GUIContent btnContent = new GUIContent(icon); // 휴지통 이미지를 버튼의 내용으로 설정합니다.
+        Texture2D icon = Resources.Load<Texture2D>("Textures/Icon/DeleteIcon"); 
+        GUIContent btnContent = new GUIContent(icon); 
 
         GUI.enabled = LayerEditor.ED.SelectedLayerIds.Count > 0;
 
@@ -537,17 +513,66 @@ public class LayerWindow : EditorWindow
 
         GUI.enabled = true;
     }
-   
+
+    private void MoveSelectedLayer()
+    {
+        _prevLayerIndexs.Clear();
+
+        LayerData draggedLayerData = _draggingLayer.Value;
+        LayerData insertLayerData = _insertLayer.Value;
+
+        UnityEngine.Object[] recordObjs = new UnityEngine.Object[] { draggedLayerData, insertLayerData };
+        Undo.RecordObjects(recordObjs, "Dragged Layer");
+
+        _insertLayer = new KeyValuePair<int, LayerData>();
+        _draggingLayer = new KeyValuePair<int, LayerData>();
+
+        long insertTime = insertLayerData.CreationTimestamp;
+        Rect insertRect = insertLayerData.LayerRect;
+        int insertIndex = insertLayerData.transform.GetSiblingIndex();
+        int draggedIndex = draggedLayerData.transform.GetSiblingIndex();
+
+        insertLayerData.CreationTimestamp = draggedLayerData.CreationTimestamp;
+        draggedLayerData.CreationTimestamp = insertTime;
+
+        insertLayerData.LayerRect = draggedLayerData.LayerRect;
+        draggedLayerData.LayerRect = insertRect;
+
+        insertLayerData.transform.SetSiblingIndex(draggedIndex);
+        draggedLayerData.transform.SetSiblingIndex(insertIndex);
+
+        _prevLayerIndexs.Add(draggedLayerData.Id, draggedIndex);
+        _prevLayerIndexs.Add(insertLayerData.Id, insertIndex);
+
+        GUIUtility.keyboardControl = 0;
+        Event.current.Use();
+
+    }
+
     private void ChangeLayerName(LayerData layerData)
     {
         string layerName = layerData.Name;
-        layerName = Utils.EditPropertyWithUndo(
-            "",
-            layerName,
-            newName => layerData.Name = newName,
-            (label, value) => EditorGUILayout.TextField(value, GUILayout.Width(200)),
-            layerData
-        );
-    }
 
+        if (IsEditingLayerName(layerData))
+        {
+            GUILayout.Space(1);
+            layerName = Utils.EditPropertyWithUndo(
+                "",
+                layerName,
+                newName => layerData.Name = newName,
+                (label, value) => EditorGUILayout.TextField(value, GUILayout.Width(200)),
+                layerData
+            );
+        }
+        else
+        {
+            GUILayout.Space(3);
+            EditorGUILayout.LabelField(layerName, GUILayout.Width(200));
+        }
+    }
+    private bool IsEditingLayerName(LayerData layerData)
+    {
+        bool isEditing = LayerEditor.ED.SelectedLayerIds.Contains(layerData.Id);
+        return isEditing;
+    }
 }

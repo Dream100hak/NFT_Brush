@@ -51,5 +51,28 @@ public class LayerStyle
     {
         return SetLableStyle(Color.white);
     }
+
+    public static GUIStyle SetWhiteSkinBoxStyle()
+    {
+
+        GUIStyle boxStyle = new GUIStyle(GUI.skin.box);
+        boxStyle.normal.background = EditorGUIUtility.whiteTexture;
+ 
+        return boxStyle;
+    }
+
+    public static void DrawSeparatorLine(float space, float height , Color color)
+    {
+        GUILayout.Space(space);
+
+        GUIStyle separatorStyle = new GUIStyle(GUI.skin.box);
+        separatorStyle.normal.background = EditorGUIUtility.whiteTexture;
+
+        Color originalColor = GUI.color;
+        GUI.color = color;
+        GUILayout.Box("", separatorStyle, GUILayout.ExpandWidth(true), GUILayout.Height(height));
+        GUI.color = originalColor;
+    }
+
 #endif
 }
