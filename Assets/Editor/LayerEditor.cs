@@ -112,10 +112,28 @@ public class LayerEditor
         Undo.RegisterCreatedObjectUndo(s_currentLayer.gameObject, "Create Layer");
 
         ED.SelectedLayerIds.Add(newLayerId);
+        SelectLayerObjects();
+
+        Utils.UndoStack.Push(() =>
+        {
+            var destroyedLayers = LayerObjects.Where(x => x.Value == null).Select(x => x.Key).ToList();
+            if (destroyedLayers.Count > 0)
+            {
+                foreach (int id in destroyedLayers)
+                {
+                    ToDeleteLayerIds.Add(id);
+                    EmptyLayerIds.Add(id);
+                }
+            }
+
+            if (ED.SelectedLayerIds.Contains(newLayerId))
+             ED.SelectedLayerIds.Remove(newLayerId);
+
+            SearchTopLayerId();
+        });
     }
     public static void CreateCloneLayer(int originalId, Vector3 direction)
     {
-        // Ensure the original layer exists
         if (!LayerObjects.ContainsKey(originalId))
             return;
 
@@ -133,8 +151,6 @@ public class LayerEditor
             newLayerId = s_generateId;
         }
 
-        int prevChildCount = BrushEditor.CubeParent.childCount;
-
         GameObject newLayer = GameObject.Instantiate(originalLayer.gameObject); // Clone the original layer
         newLayer.name = originalLayer.name + " Copy"; // Name the new layer
         newLayer.transform.SetParent(BrushEditor.CubeParent); // Set parent
@@ -142,7 +158,6 @@ public class LayerEditor
 
         newLayer.transform.localPosition = originalLayer.localPosition + direction * BrushEditor.ED.PlacementDistance;
 
-        // Set layer data
         newLayer.GetComponent<LayerData>().Id = newLayerId;
         newLayer.GetComponent<LayerData>().CreationTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         newLayer.GetComponent<LayerData>().Name = newLayer.name;
@@ -151,9 +166,13 @@ public class LayerEditor
         LayerObjects.Add(newLayerId, newLayer.transform);
         s_currentLayer = newLayer.transform;
 
+        Selection.activeGameObject = newLayer.gameObject;
+        EditorGUIUtility.PingObject(newLayer);
+
         Undo.RegisterCreatedObjectUndo(s_currentLayer.gameObject, "Create Copy Layer");
 
         ED.SelectedLayerIds.Add(newLayerId);
+        SelectLayerObjects();
     }
     public static void DeleteLayerIds()
     {
@@ -203,5 +222,52 @@ public class LayerEditor
 
         return layerDatas;
     }
+    public static void SelectLayerObjects()
+    {
+        GameObject[] selectedObjects = new GameObject[ED.SelectedLayerIds.Count];
+        for (int i = 0; i < ED.SelectedLayerIds.Count; i++)
+        {
+            int layerId = ED.SelectedLayerIds[i];
+            selectedObjects[i] = LayerObjects[layerId].gameObject;
+        }
 
+        Selection.objects = selectedObjects;
+    }
+
+    public static Dictionary<int, Transform> GetDictinaryLayers()
+    {
+        Transform cubeParent = BrushEditor.GetCubeParent();
+        Dictionary<int, Transform> layers = new Dictionary<int, Transform>();
+
+        for (int i = 0; i < cubeParent.childCount; i++)
+        {
+            Transform childLayer = cubeParent.GetChild(i);
+
+            int id = childLayer.GetComponent<LayerData>().Id;
+            string name = childLayer.GetComponent<LayerData>().Name;
+
+            if (!layers.ContainsKey(id))
+                layers.Add(id, childLayer);
+
+            childLayer.name = name;
+            childLayer.GetComponent<LayerData>().HasChanged = true;
+        }
+
+        return layers;
+    }
+
+    public static void SearchTopLayerId()
+    {
+        LayerEditor.ED.SelectedLayerIds.Clear();
+
+        var remainingLayerObjects = LayerObjects
+              .Where(x => x.Value != null)
+              .OrderByDescending(x => x.Value.GetComponent<LayerData>().CreationTimestamp);
+
+        if (remainingLayerObjects.Any())
+        {
+            int topLayerId = remainingLayerObjects.First().Key;
+            ED.SelectedLayerIds.Add(topLayerId);
+        }
+    }
 }

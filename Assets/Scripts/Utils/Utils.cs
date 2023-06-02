@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -6,6 +7,30 @@ using UnityEngine;
 
 public class Utils
 {
+    public static Stack<Action> _undoStack = new Stack<Action>();
+    public static Stack<Action> _redoStack = new Stack<Action>();
+
+    public static Stack<Action> UndoStack { get => _undoStack; }
+
+    public static void UndoExecute()
+    {
+        if (_undoStack.Count > 0)
+        {
+            Action undoAction = _undoStack.Pop();
+            _redoStack.Push(undoAction); 
+            undoAction.Invoke();
+        }
+    }
+    public static void RedoExeCute()
+    {
+        if (_redoStack.Count > 0)
+        {
+            Action redoAction = _redoStack.Pop();
+            _undoStack.Push(redoAction);
+            redoAction.Invoke(); 
+        }
+    }
+
 #if UNITY_EDITOR
     public static T EditPropertyWithUndo<T>(string label, T currentValue, Action<T> setValueAction, Func<string, T, T> drawField, UnityEngine.Object undoRecordObject)
     {
