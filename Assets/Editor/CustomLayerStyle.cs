@@ -2,15 +2,25 @@ using System.Collections;
 using System.Collections.Generic;
 
 using UnityEngine;
+using UnityEditor.Graphs;
 
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-
-public class LayerStyle 
+public class CustomLayerStyle 
 {
 #if UNITY_EDITOR
+    public static GUIStyle SetBrushTabStyle()
+    {
+        GUI.color = Color.clear;
+        GUIStyle boxStyle = new GUIStyle(GUI.skin.box);
+        boxStyle.border = new RectOffset(0, 0, 1, 1); // 원하는 테두리 크기로 조정할 수 있습니다.
+        
+        boxStyle.alignment = TextAnchor.MiddleCenter;
+
+        return boxStyle;
+    }
     public static GUIStyle SetToggleTabStyle()
     {
         // GUI 스타일 객체 생성
@@ -21,8 +31,8 @@ public class LayerStyle
         toggleStyle.contentOffset = new Vector2(-10, 0);
         toggleStyle.fontStyle = FontStyle.Normal;
 
-        toggleStyle.normal.background = Resources.Load<Texture2D>("Textures/Icon/Tab");
-        toggleStyle.onNormal.background = Resources.Load<Texture2D>("Textures/Icon/TabBlack");
+        toggleStyle.normal.background = Resources.Load<Texture2D>("Textures/Icon/TabBlack");
+        toggleStyle.onNormal.background = Resources.Load<Texture2D>("Textures/Icon/Tab");
 
         return toggleStyle;
     }
@@ -72,7 +82,7 @@ public class LayerStyle
         GUI.color = color;
         GUILayout.Box("", separatorStyle, GUILayout.ExpandWidth(true), GUILayout.Height(height));
         GUI.color = originalColor;
+ 
     }
-
 #endif
 }

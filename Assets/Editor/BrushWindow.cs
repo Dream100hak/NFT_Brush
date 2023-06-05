@@ -20,21 +20,31 @@ public class BrushWindow : EditorWindow
 
     public void OnGUI()
     {
+        float tabBoxPosX = 0;
         if (_tabBtnStyle == null)
-            _tabBtnStyle = LayerStyle.SetToggleTabStyle();
+            _tabBtnStyle = CustomLayerStyle.SetToggleTabStyle();
 
-        _showBrushSettings = GUI.Toggle(new Rect(0, 10, 40, 40), _showBrushSettings, "설정", _tabBtnStyle);
+       
+        _showBrushSettings = GUI.Toggle(new Rect(tabBoxPosX, 10, 40, 40), _showBrushSettings, "설정", _tabBtnStyle);
+        tabBoxPosX += 40f;
 
         if (_showBrushSettings)
         {
             GUILayout.Space(60);
             _showBrushEffect = false;
             // 기본 옵션 [ 사이즈 / 간격 / 색상]
-            BrushEditor.ED.CubeSize = Utils.EditPropertyWithUndo("크기", BrushEditor.ED.CubeSize, newSize => BrushEditor.ED.CubeSize = newSize, (label, value) => EditorGUILayout.Slider(label, value, 0.1f, 2f), BrushEditor.ED);
-            BrushEditor.ED.PlacementDistance = Utils.EditPropertyWithUndo("간격", BrushEditor.ED.PlacementDistance, newDistance => BrushEditor.ED.PlacementDistance = newDistance, (label, value) => EditorGUILayout.Slider(label, value, 0.1f, 1f), BrushEditor.ED);
-            BrushEditor.ED.CubeColor = Utils.EditPropertyWithUndo("색상", BrushEditor.ED.CubeColor, newColor => BrushEditor.ED.CubeColor = newColor, (label, value) => EditorGUILayout.ColorField(label, value), BrushEditor.ED);
+            CustomBrushEditor.ED.CubeSize = Utils.EditPropertyWithUndo("크기", CustomBrushEditor.ED.CubeSize, newSize => CustomBrushEditor.ED.CubeSize = newSize, (label, value) => EditorGUILayout.Slider(label, value, 0.1f, 2f), CustomBrushEditor.ED);
+            CustomBrushEditor.ED.PlacementDistance = Utils.EditPropertyWithUndo("간격", CustomBrushEditor.ED.PlacementDistance, newDistance => CustomBrushEditor.ED.PlacementDistance = newDistance, (label, value) => EditorGUILayout.Slider(label, value, 0.1f, 1f), CustomBrushEditor.ED);
+            CustomBrushEditor.ED.CubeColor = Utils.EditPropertyWithUndo("색상", CustomBrushEditor.ED.CubeColor, newColor => CustomBrushEditor.ED.CubeColor = newColor, (label, value) => EditorGUILayout.ColorField(label, value), CustomBrushEditor.ED);
+
         }
-        _showBrushEffect = GUI.Toggle(new Rect(40, 10, 40, 40), _showBrushEffect, "효과", _tabBtnStyle);
+
+        _showBrushEffect = GUI.Toggle(new Rect(tabBoxPosX, 10, 40, 40), _showBrushEffect, "효과", _tabBtnStyle);    
+        tabBoxPosX += 40f;
+
+        GUI.DrawTexture(new Rect(tabBoxPosX, 13, position.width * 5, 1), EditorGUIUtility.whiteTexture, ScaleMode.StretchToFill, false, 1f, new Color32(29, 29, 29, 255), 0, 0);
+        GUI.DrawTexture(new Rect(tabBoxPosX, 14f, position.width * 5, 36), EditorGUIUtility.whiteTexture, ScaleMode.StretchToFill, false, 1f, new Color32(41, 41, 41, 255), 0, 0);
+        GUI.DrawTexture(new Rect(tabBoxPosX, 50, position.width * 5, 1), EditorGUIUtility.whiteTexture, ScaleMode.StretchToFill, false, 1f, new Color32(29, 29, 29, 255), 0, 0);
 
         if (_showBrushEffect)
         {
@@ -43,67 +53,67 @@ public class BrushWindow : EditorWindow
             Color originalColor = GUI.color;
 
             GUILayout.BeginHorizontal();
-            BrushEditor.ED.RotatorEnabled = Utils.EditPropertyWithUndo("회전", BrushEditor.ED.RotatorEnabled, enbled => BrushEditor.ED.RotatorEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), BrushEditor.ED, 120f);
+            CustomBrushEditor.ED.RotatorEnabled = Utils.EditPropertyWithUndo("회전", CustomBrushEditor.ED.RotatorEnabled, enbled => CustomBrushEditor.ED.RotatorEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CustomBrushEditor.ED, 120f);
             GUILayout.EndHorizontal();
 
-            LayerStyle.DrawSeparatorLine(5, 1.7f, new Color(0.3f, 0.3f, 0.3f, 0.5f));
+            CustomLayerStyle.DrawSeparatorLine(5, 1.7f, new Color(0.3f, 0.3f, 0.3f, 0.5f));
 
-            if (BrushEditor.ED.RotatorEnabled)
+            if (CustomBrushEditor.ED.RotatorEnabled)
             {
-                EditorGUILayout.BeginVertical(LayerStyle.SetToggleBoxStyle());
+                EditorGUILayout.BeginVertical(CustomLayerStyle.SetToggleBoxStyle());
 
-                BrushEditor.ED.Random_RotSpeed = Utils.EditPropertyWithUndo("속도", BrushEditor.ED.Random_RotSpeed, speed => BrushEditor.ED.Random_RotSpeed = speed, (label, value) => EditorGUILayout.FloatField(label, value), BrushEditor.ED, 120f);
+                CustomBrushEditor.ED.Random_RotSpeed = Utils.EditPropertyWithUndo("속도", CustomBrushEditor.ED.Random_RotSpeed, speed => CustomBrushEditor.ED.Random_RotSpeed = speed, (label, value) => EditorGUILayout.FloatField(label, value), CustomBrushEditor.ED, 120f);
 
                 EditorGUILayout.EndVertical();
-                LayerStyle.DrawSeparatorLine(0, 1.7f, new Color(0.3f, 0.3f, 0.3f, 0.5f));
+                CustomLayerStyle.DrawSeparatorLine(0, 1.7f, new Color(0.3f, 0.3f, 0.3f, 0.5f));
             }
 
             GUI.color = originalColor;
             GUILayout.Space(5);
 
-            BrushEditor.ED.MoverEnabled = Utils.EditPropertyWithUndo("이동", BrushEditor.ED.MoverEnabled, enbled => BrushEditor.ED.MoverEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), BrushEditor.ED, 120f);
+            CustomBrushEditor.ED.MoverEnabled = Utils.EditPropertyWithUndo("이동", CustomBrushEditor.ED.MoverEnabled, enbled => CustomBrushEditor.ED.MoverEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CustomBrushEditor.ED, 120f);
 
-            LayerStyle.DrawSeparatorLine(5, 1.7f, new Color(0.3f, 0.3f, 0.3f, 0.5f));
+            CustomLayerStyle.DrawSeparatorLine(5, 1.7f, new Color(0.3f, 0.3f, 0.3f, 0.5f));
 
-            if (BrushEditor.ED.MoverEnabled)
+            if (CustomBrushEditor.ED.MoverEnabled)
             {
-                bool prevStraightEnbled = BrushEditor.ED.StraightEnabled;
-                bool prevBlackholeEnbled = BrushEditor.ED.BlackholeEnabled;
-                bool prevSnowEnabled = BrushEditor.ED.SnowEnabled;
+                bool prevStraightEnbled = CustomBrushEditor.ED.StraightEnabled;
+                bool prevBlackholeEnbled = CustomBrushEditor.ED.BlackholeEnabled;
+                bool prevSnowEnabled = CustomBrushEditor.ED.SnowEnabled;
 
                 GUILayout.BeginHorizontal(GUI.skin.box);
 
-                EditorGUILayout.BeginVertical(LayerStyle.SetToggleBoxStyle());
-                BrushEditor.ED.StraightEnabled = Utils.EditPropertyWithUndo("직선", BrushEditor.ED.StraightEnabled, enbled => BrushEditor.ED.StraightEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), BrushEditor.ED, 120f);
-                if (BrushEditor.ED.StraightEnabled)
+                EditorGUILayout.BeginVertical(CustomLayerStyle.SetToggleBoxStyle());
+                CustomBrushEditor.ED.StraightEnabled = Utils.EditPropertyWithUndo("직선", CustomBrushEditor.ED.StraightEnabled, enbled => CustomBrushEditor.ED.StraightEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CustomBrushEditor.ED, 120f);
+                if (CustomBrushEditor.ED.StraightEnabled)
                 {
-                    BrushEditor.ED.Straight_MoveSpeed = Utils.EditPropertyWithUndo("속도", BrushEditor.ED.Straight_MoveSpeed, speed => BrushEditor.ED.Straight_MoveSpeed = speed, (label, value) => EditorGUILayout.FloatField(label, value), BrushEditor.ED, 120f);
-                    BrushEditor.ED.Straight_MoveDirection = Utils.EditPropertyWithUndo("방향", BrushEditor.ED.Straight_MoveDirection, direction => BrushEditor.ED.Straight_MoveDirection = direction, (label, value) => (E_Direction)EditorGUILayout.EnumPopup(label, (E_Direction)value), BrushEditor.ED, 120f);
+                    CustomBrushEditor.ED.Straight_MoveSpeed = Utils.EditPropertyWithUndo("속도", CustomBrushEditor.ED.Straight_MoveSpeed, speed => CustomBrushEditor.ED.Straight_MoveSpeed = speed, (label, value) => EditorGUILayout.FloatField(label, value), CustomBrushEditor.ED, 120f);
+                    CustomBrushEditor.ED.Straight_MoveDirection = Utils.EditPropertyWithUndo("방향", CustomBrushEditor.ED.Straight_MoveDirection, direction => CustomBrushEditor.ED.Straight_MoveDirection = direction, (label, value) => (E_Direction)EditorGUILayout.EnumPopup(label, (E_Direction)value), CustomBrushEditor.ED, 120f);
                 }
                 EditorGUILayout.EndVertical();
                 GUILayout.Space(5);
 
-                EditorGUILayout.BeginVertical(LayerStyle.SetToggleBoxStyle());
-                BrushEditor.ED.BlackholeEnabled = Utils.EditPropertyWithUndo("블랙홀", BrushEditor.ED.BlackholeEnabled, enbled => BrushEditor.ED.BlackholeEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), BrushEditor.ED, 110f);
-                if (BrushEditor.ED.BlackholeEnabled)
+                EditorGUILayout.BeginVertical(CustomLayerStyle.SetToggleBoxStyle());
+                CustomBrushEditor.ED.BlackholeEnabled = Utils.EditPropertyWithUndo("블랙홀", CustomBrushEditor.ED.BlackholeEnabled, enbled => CustomBrushEditor.ED.BlackholeEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CustomBrushEditor.ED, 110f);
+                if (CustomBrushEditor.ED.BlackholeEnabled)
                 {
-                    BrushEditor.ED.Blackhole_AttractionForce = Utils.EditPropertyWithUndo("속도", BrushEditor.ED.Blackhole_AttractionForce, speed => BrushEditor.ED.Blackhole_AttractionForce = speed, (label, value) => EditorGUILayout.FloatField(label, value), BrushEditor.ED, 110f);
+                    CustomBrushEditor.ED.Blackhole_AttractionForce = Utils.EditPropertyWithUndo("속도", CustomBrushEditor.ED.Blackhole_AttractionForce, speed => CustomBrushEditor.ED.Blackhole_AttractionForce = speed, (label, value) => EditorGUILayout.FloatField(label, value), CustomBrushEditor.ED, 110f);
                 }
                 EditorGUILayout.EndVertical();
                 GUILayout.Space(5);
 
-                EditorGUILayout.BeginVertical(LayerStyle.SetToggleBoxStyle());
-                BrushEditor.ED.SnowEnabled = Utils.EditPropertyWithUndo("눈", BrushEditor.ED.SnowEnabled, enbled => BrushEditor.ED.SnowEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), BrushEditor.ED, 130f);
-                if (BrushEditor.ED.SnowEnabled)
+                EditorGUILayout.BeginVertical(CustomLayerStyle.SetToggleBoxStyle());
+                CustomBrushEditor.ED.SnowEnabled = Utils.EditPropertyWithUndo("눈", CustomBrushEditor.ED.SnowEnabled, enbled => CustomBrushEditor.ED.SnowEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CustomBrushEditor.ED, 130f);
+                if (CustomBrushEditor.ED.SnowEnabled)
                 {
-                    BrushEditor.ED.Snow_SwayIntensity = Utils.EditPropertyWithUndo("강도", BrushEditor.ED.Snow_SwayIntensity, speed => BrushEditor.ED.Snow_SwayIntensity = speed, (label, value) => EditorGUILayout.FloatField(label, value), BrushEditor.ED, 120f);
-                    BrushEditor.ED.Snow_SwayAmount = Utils.EditPropertyWithUndo("흔들림", BrushEditor.ED.Snow_SwayAmount, speed => BrushEditor.ED.Snow_SwayAmount = speed, (label, value) => EditorGUILayout.FloatField(label, value), BrushEditor.ED, 110f);
+                    CustomBrushEditor.ED.Snow_SwayIntensity = Utils.EditPropertyWithUndo("강도", CustomBrushEditor.ED.Snow_SwayIntensity, speed => CustomBrushEditor.ED.Snow_SwayIntensity = speed, (label, value) => EditorGUILayout.FloatField(label, value), CustomBrushEditor.ED, 120f);
+                    CustomBrushEditor.ED.Snow_SwayAmount = Utils.EditPropertyWithUndo("흔들림", CustomBrushEditor.ED.Snow_SwayAmount, speed => CustomBrushEditor.ED.Snow_SwayAmount = speed, (label, value) => EditorGUILayout.FloatField(label, value), CustomBrushEditor.ED, 110f);
                 }
                 EditorGUILayout.EndVertical();
                 GUILayout.EndHorizontal();
                 GUI.color = originalColor;
 
-                LayerStyle.DrawSeparatorLine(0, 1.7f, new Color(0.3f, 0.3f, 0.3f, 0.5f));
+                CustomLayerStyle.DrawSeparatorLine(0, 1.7f, new Color(0.3f, 0.3f, 0.3f, 0.5f));
 
                 CheckBrushEffectEnabled(prevStraightEnbled, prevBlackholeEnbled, prevSnowEnabled);
 
@@ -111,19 +121,19 @@ public class BrushWindow : EditorWindow
 
             GUILayout.Space(5);
 
-            BrushEditor.ED.NatureEnabled = Utils.EditPropertyWithUndo("자연", BrushEditor.ED.NatureEnabled, enbled => BrushEditor.ED.NatureEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), BrushEditor.ED, 120f);
-            LayerStyle.DrawSeparatorLine(5, 1.7f, new Color(0.3f, 0.3f, 0.3f, 0.5f));
+            CustomBrushEditor.ED.NatureEnabled = Utils.EditPropertyWithUndo("자연", CustomBrushEditor.ED.NatureEnabled, enbled => CustomBrushEditor.ED.NatureEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CustomBrushEditor.ED, 120f);
+            CustomLayerStyle.DrawSeparatorLine(5, 1.7f, new Color(0.3f, 0.3f, 0.3f, 0.5f));
 
-            if (BrushEditor.ED.NatureEnabled)
+            if (CustomBrushEditor.ED.NatureEnabled)
             {
                 GUILayout.BeginHorizontal(GUI.skin.box);
 
-                EditorGUILayout.BeginVertical(LayerStyle.SetToggleBoxStyle());
-                BrushEditor.ED.SnowSpawnEnabled = Utils.EditPropertyWithUndo("눈", BrushEditor.ED.SnowSpawnEnabled, enbled => BrushEditor.ED.SnowSpawnEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), BrushEditor.ED, 120f);
-                if (BrushEditor.ED.SnowSpawnEnabled)
+                EditorGUILayout.BeginVertical(CustomLayerStyle.SetToggleBoxStyle());
+                CustomBrushEditor.ED.SnowSpawnEnabled = Utils.EditPropertyWithUndo("눈", CustomBrushEditor.ED.SnowSpawnEnabled, enbled => CustomBrushEditor.ED.SnowSpawnEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CustomBrushEditor.ED, 120f);
+                if (CustomBrushEditor.ED.SnowSpawnEnabled)
                 {
-                    BrushEditor.ED.SnowSpawn_SwayIntensity = Utils.EditPropertyWithUndo("강도", BrushEditor.ED.SnowSpawn_SwayIntensity, speed => BrushEditor.ED.SnowSpawn_SwayIntensity = speed, (label, value) => EditorGUILayout.FloatField(label, value), BrushEditor.ED, 120f);
-                    BrushEditor.ED.SnowSpawn_SwayAmount = Utils.EditPropertyWithUndo("흔들림", BrushEditor.ED.SnowSpawn_SwayAmount, speed => BrushEditor.ED.SnowSpawn_SwayAmount = speed, (label, value) => EditorGUILayout.FloatField(label, value), BrushEditor.ED, 110f);
+                    CustomBrushEditor.ED.SnowSpawn_SwayIntensity = Utils.EditPropertyWithUndo("강도", CustomBrushEditor.ED.SnowSpawn_SwayIntensity, speed => CustomBrushEditor.ED.SnowSpawn_SwayIntensity = speed, (label, value) => EditorGUILayout.FloatField(label, value), CustomBrushEditor.ED, 120f);
+                    CustomBrushEditor.ED.SnowSpawn_SwayAmount = Utils.EditPropertyWithUndo("흔들림", CustomBrushEditor.ED.SnowSpawn_SwayAmount, speed => CustomBrushEditor.ED.SnowSpawn_SwayAmount = speed, (label, value) => EditorGUILayout.FloatField(label, value), CustomBrushEditor.ED, 110f);
                 }
                 EditorGUILayout.EndVertical();
                 GUILayout.Space(10);
@@ -131,7 +141,7 @@ public class BrushWindow : EditorWindow
                 GUILayout.EndHorizontal();
                 GUI.color = originalColor;
 
-                LayerStyle.DrawSeparatorLine(0, 1.7f, new Color(0.3f, 0.3f, 0.3f, 0.5f));
+                CustomLayerStyle.DrawSeparatorLine(0, 1.7f, new Color(0.3f, 0.3f, 0.3f, 0.5f));
             }
         }
     }
@@ -141,18 +151,18 @@ public class BrushWindow : EditorWindow
     private void CheckBrushEffectEnabled(bool prevStraightEnabled, bool prevBlackholeEnabled, bool prevSnowEnabled)
     {
         int cnt = 0;
-        cnt = (BrushEditor.ED.StraightEnabled) ? cnt + 1 : cnt;
-        cnt = (BrushEditor.ED.BlackholeEnabled) ? cnt + 1 : cnt;
-        cnt = (BrushEditor.ED.SnowEnabled) ? cnt + 1 : cnt;
+        cnt = (CustomBrushEditor.ED.StraightEnabled) ? cnt + 1 : cnt;
+        cnt = (CustomBrushEditor.ED.BlackholeEnabled) ? cnt + 1 : cnt;
+        cnt = (CustomBrushEditor.ED.SnowEnabled) ? cnt + 1 : cnt;
 
         if(cnt > 1)
         {
             if (prevStraightEnabled)
-                BrushEditor.ED.StraightEnabled = false;
+                CustomBrushEditor.ED.StraightEnabled = false;
             else if(prevBlackholeEnabled)
-                BrushEditor.ED.BlackholeEnabled = false;
+                CustomBrushEditor.ED.BlackholeEnabled = false;
             else if(prevSnowEnabled)
-                BrushEditor.ED.SnowEnabled = false;
+                CustomBrushEditor.ED.SnowEnabled = false;
         }
     }
 

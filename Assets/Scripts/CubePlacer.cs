@@ -4,5 +4,4 @@ using UnityEngine;
 public class CubePlacer : MonoBehaviour
 {
     public GameObject CubePrefab;
-
 }

@@ -36,16 +36,16 @@ public class LayerWindow : EditorWindow
     {
         _gridTexture = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Resources/Textures/Grid.png");
 
-        BrushEditor.EnablePlacing();
+        CustomBrushEditor.EnablePlacing();
         EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         Undo.undoRedoPerformed += OnUndoRedoPerformed;
-        LayerEditor.ED.SelectedLayerIds.Clear();
+        CustomLayerEditor.ED.SelectedLayerIds.Clear();
         Debug.Log("Subscribed to Undo.undoRedoPerformed");
 
     }
     private void OnDisable()
     {
-        BrushEditor.DisablePlacing();
+        CustomBrushEditor.DisablePlacing();
         EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
         Undo.undoRedoPerformed -= OnUndoRedoPerformed;
         Debug.Log("Unsubscribed from Undo.undoRedoPerformed");
@@ -56,6 +56,7 @@ public class LayerWindow : EditorWindow
         Debug.Log("OnUndoRedoPerformed called");
 
         Utils.UndoExecute();
+        CustomLayerEditor.SetLayerChanged();
 
         Repaint();
     }
@@ -64,11 +65,11 @@ public class LayerWindow : EditorWindow
         if (state == PlayModeStateChange.EnteredPlayMode)
         {
             Tools.current = Tool.Move;
-            BrushEditor.DisablePlacing();
+            CustomBrushEditor.DisablePlacing();
         }
         else if (state == PlayModeStateChange.ExitingPlayMode)
         {
-            BrushEditor.EnablePlacing();
+            CustomBrushEditor.EnablePlacing();
         }
     }
     public Texture2D CaptureLayerSnapshot(LayerData layer)
@@ -95,7 +96,7 @@ public class LayerWindow : EditorWindow
         int canvasLayer = LayerMask.NameToLayer("Canvas");
         tempCamera.cullingMask = 1 << canvasLayer;
 
-        Transform cubeParent = BrushEditor.GetCubeParent();
+        Transform cubeParent = CustomBrushEditor.GetCubeParent();
         List<bool> layerStates = new List<bool>();
         for (int i = 0; i < cubeParent.childCount; i++)
         {
@@ -149,7 +150,7 @@ public class LayerWindow : EditorWindow
             return;
         }
 
-        if (BrushEditor.GetCubeParent() != null)
+        if (CustomBrushEditor.GetCubeParent() != null)
             MakeLayerList();
 
         Rect seperateRect = GUILayoutUtility.GetLastRect();
@@ -201,8 +202,8 @@ public class LayerWindow : EditorWindow
 
         if (GUILayout.Button(btnContent, GUILayout.Width(40), GUILayout.Height(40))) // 버튼의 크기를 100x100으로 설정합니다.
         {
-            LayerEditor.ED.SelectedLayerIds.Clear();
-            LayerEditor.CreateNewLayer();
+            CustomLayerEditor.ED.SelectedLayerIds.Clear();
+            CustomLayerEditor.CreateNewLayer();
             GUIUtility.keyboardControl = 0;
         }
     }
@@ -213,17 +214,17 @@ public class LayerWindow : EditorWindow
         _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, false, true);
 
         _layerIndexList.Clear();
-        foreach (var layerPair in LayerEditor.LayerObjects)
+        foreach (var layerPair in CustomLayerEditor.LayerObjects)
             _layerIndexList.Add(layerPair.Key);
 
         var sortedLayerObjects = _layerIndexList
-              .Select(x => new KeyValuePair<int, Transform>(x, LayerEditor.LayerObjects[x]))
+              .Select(x => new KeyValuePair<int, Transform>(x, CustomLayerEditor.LayerObjects[x]))
               .Where(x => x.Value != null)
               .OrderByDescending(x => x.Value.GetComponent<LayerData>().CreationTimestamp)
               .ToList();
 
         List<int> tempLayerIndexList = new List<int>(_layerIndexList);
-        List<LayerData> layerDatas = LayerEditor.GetLayerDatas();
+        List<LayerData> layerDatas = CustomLayerEditor.GetLayerDatas();
 
         foreach (var layerPair in sortedLayerObjects)
         {
@@ -237,7 +238,7 @@ public class LayerWindow : EditorWindow
             Color originBackgroundColor = GUI.backgroundColor;
             GUI.backgroundColor = Color.clear;
 
-            foreach (var id in LayerEditor.ED.SelectedLayerIds)
+            foreach (var id in CustomLayerEditor.ED.SelectedLayerIds)
             {
                 if(id == i)
                 {
@@ -246,7 +247,7 @@ public class LayerWindow : EditorWindow
                 }     
             }
 
-            GUILayout.BeginHorizontal(LayerStyle.SetWhiteSkinBoxStyle());
+            GUILayout.BeginHorizontal(CustomLayerStyle.SetWhiteSkinBoxStyle());
 
             Texture2D layerSnapshot = CaptureLayerSnapshot(layerData); // 스냅샷 관련
             Rect imageRect = GUILayoutUtility.GetRect(50, 50);
@@ -278,7 +279,7 @@ public class LayerWindow : EditorWindow
                     else
                         InsertControlLayerId(i);
 
-                    LayerEditor.SelectLayerObjects();
+                    CustomLayerEditor.SelectLayerObjects();
                 }
                 Event.current.Use();
             }
@@ -295,7 +296,7 @@ public class LayerWindow : EditorWindow
                 _isDragging = false; 
 
             GUI.backgroundColor = originBackgroundColor;
-            LayerStyle.DrawSeparatorLine(-3, 1.7f, new Color(0.1f, 0.1f, 0.1f, 0.5f));
+            CustomLayerStyle.DrawSeparatorLine(-3, 1.7f, new Color(0.1f, 0.1f, 0.1f, 0.5f));
 
             GUILayout.Space(-5);
         }
@@ -304,17 +305,17 @@ public class LayerWindow : EditorWindow
         //레이어가 클릭되지 않은 경우 
         if (Event.current.type == EventType.MouseDown && !clickedInsideLayer)
         {
-            List<int> prevSelectedLayerIds = new List<int>(LayerEditor.ED.SelectedLayerIds);
+            List<int> prevSelectedLayerIds = new List<int>(CustomLayerEditor.ED.SelectedLayerIds);
 
-            LayerEditor.ED.SelectedLayerIds.Clear();
+            CustomLayerEditor.ED.SelectedLayerIds.Clear();
             Selection.activeObject = null;
 
             Utils.UndoStack.Push(() => 
                 {
                     foreach (int prevId in prevSelectedLayerIds)
                     {
-                        if (!LayerEditor.ED.SelectedLayerIds.Contains(prevId))
-                            LayerEditor.ED.SelectedLayerIds.Add(prevId);
+                        if (!CustomLayerEditor.ED.SelectedLayerIds.Contains(prevId))
+                            CustomLayerEditor.ED.SelectedLayerIds.Add(prevId);
                     }
                 });
         }
@@ -339,8 +340,8 @@ public class LayerWindow : EditorWindow
         if (Event.current.type == EventType.MouseUp && _insertLayer.Value != null)
             MoveSelectedLayer();
   
-        LayerEditor.DeleteLayerIds();
-        LayerEditor.RestoreLayerIds();
+        CustomLayerEditor.DeleteLayerIds();
+        CustomLayerEditor.RestoreLayerIds();
         GUILayout.EndScrollView();
         Repaint();
     }
@@ -349,71 +350,71 @@ public class LayerWindow : EditorWindow
     {
         if(Event.current.control || Event.current.command)
         {
-            Undo.RecordObject(LayerEditor.ED, "Control Layer Selection");
+            Undo.RecordObject(CustomLayerEditor.ED, "Control Layer Selection");
 
-            if (LayerEditor.ED.SelectedLayerIds.Contains(id))
-                LayerEditor.ED.SelectedLayerIds.Remove(id);
+            if (CustomLayerEditor.ED.SelectedLayerIds.Contains(id))
+                CustomLayerEditor.ED.SelectedLayerIds.Remove(id);
             else
-                LayerEditor.ED.SelectedLayerIds.Add(id);
+                CustomLayerEditor.ED.SelectedLayerIds.Add(id);
 
             _multiSelected = true;
         }
         else
         {
-            Undo.RecordObject(LayerEditor.ED,  "Layer Selection");
+            Undo.RecordObject(CustomLayerEditor.ED,  "Layer Selection");
 
-            LayerEditor.ED.SelectedLayerIds.Clear();
-            LayerEditor.ED.SelectedLayerIds.Add(id);   
+            CustomLayerEditor.ED.SelectedLayerIds.Clear();
+            CustomLayerEditor.ED.SelectedLayerIds.Add(id);   
         }
 
         Utils.UndoStack.Push(() => 
         {
-            if(LayerEditor.ED.SelectedLayerIds.Contains(id))
-                LayerEditor.ED.SelectedLayerIds.Remove(id);
+            if(CustomLayerEditor.ED.SelectedLayerIds.Contains(id))
+                CustomLayerEditor.ED.SelectedLayerIds.Remove(id);
         });
     }
     private void InsertShiftLayerId(int id)
     {
-        List<int> prevSelectedLayerIds = new List<int>(LayerEditor.ED.SelectedLayerIds);
+        List<int> prevSelectedLayerIds = new List<int>(CustomLayerEditor.ED.SelectedLayerIds);
 
-        Undo.RecordObject(LayerEditor.ED, "Shift Layer Selection");
+        Undo.RecordObject(CustomLayerEditor.ED, "Shift Layer Selection");
 
-        if (LayerEditor.ED.SelectedLayerIds.Any())
+        if (CustomLayerEditor.ED.SelectedLayerIds.Any())
         {
-            List<LayerData> layerDatas = LayerEditor.GetLayerOrders();
-            int firstSelectedIndex = layerDatas.FindIndex(layerData => LayerEditor.ED.SelectedLayerIds.Contains(layerData.Id));
+            List<LayerData> layerDatas = CustomLayerEditor.GetLayerOrders();
+            int firstSelectedIndex = layerDatas.FindIndex(layerData => CustomLayerEditor.ED.SelectedLayerIds.Contains(layerData.Id));
             int currentLayerIndex = layerDatas.FindIndex(layerData => layerData.Id == id);
             int startIndex = Math.Min(firstSelectedIndex, currentLayerIndex);
             int endIndex = Math.Max(firstSelectedIndex, currentLayerIndex);
 
-            LayerEditor.ED.SelectedLayerIds.Clear();
+            CustomLayerEditor.ED.SelectedLayerIds.Clear();
 
             for (int i = startIndex; i <= endIndex; i++)
-                LayerEditor.ED.SelectedLayerIds.Add(layerDatas[i].Id);
+                CustomLayerEditor.ED.SelectedLayerIds.Add(layerDatas[i].Id);
 
             Utils.UndoStack.Push(() =>
             {
                 for (int i = startIndex; i <= endIndex; i++)
                 {
-                    if (LayerEditor.ED.SelectedLayerIds.Contains(layerDatas[i].Id))
-                    LayerEditor.ED.SelectedLayerIds.Remove(layerDatas[i].Id);
+                    if (CustomLayerEditor.ED.SelectedLayerIds.Contains(layerDatas[i].Id))
+                    CustomLayerEditor.ED.SelectedLayerIds.Remove(layerDatas[i].Id);
                 }
 
                 foreach (int prevId in prevSelectedLayerIds)
                 {
-                    if (!LayerEditor.ED.SelectedLayerIds.Contains(prevId))
-                        LayerEditor.ED.SelectedLayerIds.Add(prevId);
+                    if (!CustomLayerEditor.ED.SelectedLayerIds.Contains(prevId))
+                        CustomLayerEditor.ED.SelectedLayerIds.Add(prevId);
                 }
             });
         }
         else
         {
-            LayerEditor.ED.SelectedLayerIds.Add(id);
+            CustomLayerEditor.ED.SelectedLayerIds.Add(id);
 
             Utils.UndoStack.Push(() =>
             {
-                if (LayerEditor.ED.SelectedLayerIds.Contains(id))
-                    LayerEditor.ED.SelectedLayerIds.Remove(id);
+                if (CustomLayerEditor.ED.SelectedLayerIds.Contains(id))
+                    CustomLayerEditor.ED.SelectedLayerIds.Remove(id);
             });
         } 
     }
@@ -440,7 +441,7 @@ public class LayerWindow : EditorWindow
     {
         Texture2D icon = Resources.Load<Texture2D>("Textures/Icon/CopyIcon");
         GUIContent btnContent = new GUIContent(icon);
-        GUI.enabled = LayerEditor.ED.SelectedLayerIds.Count > 0;
+        GUI.enabled = CustomLayerEditor.ED.SelectedLayerIds.Count > 0;
 
         if (GUILayout.Button(btnContent, GUILayout.Width(40), GUILayout.Height(40)))
             CopySelectedLayer(Vector3.zero);
@@ -461,13 +462,13 @@ public class LayerWindow : EditorWindow
 
     private void CopySelectedLayer(Vector3 direction)
     {
-        List<int> selectedIdList = new List<int>(LayerEditor.ED.SelectedLayerIds);
+        List<int> selectedIdList = new List<int>(CustomLayerEditor.ED.SelectedLayerIds);
 
         foreach (int id in selectedIdList)
-            LayerEditor.CreateCloneLayer(id, direction);
+            CustomLayerEditor.CreateCloneLayer(id, direction);
 
         foreach (int id in selectedIdList)
-            LayerEditor.ED.SelectedLayerIds.Remove(id);
+            CustomLayerEditor.ED.SelectedLayerIds.Remove(id);
 
         GUIUtility.keyboardControl = 0;
     }
@@ -476,36 +477,36 @@ public class LayerWindow : EditorWindow
         Texture2D icon = Resources.Load<Texture2D>("Textures/Icon/DeleteIcon"); 
         GUIContent btnContent = new GUIContent(icon); 
 
-        GUI.enabled = LayerEditor.ED.SelectedLayerIds.Count > 0;
+        GUI.enabled = CustomLayerEditor.ED.SelectedLayerIds.Count > 0;
 
         if (GUILayout.Button(btnContent, GUILayout.Width(40), GUILayout.Height(40)))
         {
-            foreach(int id in LayerEditor.ED.SelectedLayerIds)
+            foreach(int id in CustomLayerEditor.ED.SelectedLayerIds)
             {
-                Transform layer = LayerEditor.LayerObjects[id];
-                LayerEditor.ToDeleteLayerIds.Add(id);
-                LayerEditor.EmptyLayerIds.Add(id);
+                Transform layer = CustomLayerEditor.LayerObjects[id];
+                CustomLayerEditor.ToDeleteLayerIds.Add(id);
+                CustomLayerEditor.EmptyLayerIds.Add(id);
 
                 Undo.DestroyObjectImmediate(layer.gameObject);
             }
 
-            LayerEditor.SearchTopLayerId();
+            CustomLayerEditor.SearchTopLayerId();
 
             GUIUtility.keyboardControl = 0;
             _isDragging = false;
 
             Utils.UndoStack.Push(() => 
                 {
-                    var layers = LayerEditor.GetDictinaryLayers();
-                    var createdLayers = layers.Keys.Except(LayerEditor.LayerObjects.Keys).ToList();
+                    var layers = CustomLayerEditor.GetDictinaryLayers();
+                    var createdLayers = layers.Keys.Except(CustomLayerEditor.LayerObjects.Keys).ToList();
                     if (createdLayers.Count > 0)
                     {
                         foreach (int id in createdLayers)
                         {
-                            if (LayerEditor.ToRestoreLayerIds.ContainsKey(id) == false)
-                                LayerEditor.ToRestoreLayerIds.Add(id, layers[id]);
+                            if (CustomLayerEditor.ToRestoreLayerIds.ContainsKey(id) == false)
+                                CustomLayerEditor.ToRestoreLayerIds.Add(id, layers[id]);
 
-                            LayerEditor.EmptyLayerIds.Remove(id);
+                            CustomLayerEditor.EmptyLayerIds.Remove(id);
                         }
                     }
                 });
@@ -551,7 +552,7 @@ public class LayerWindow : EditorWindow
 
         Utils.UndoStack.Push(() =>
         {
-            var layers = LayerEditor.GetDictinaryLayers();
+            var layers = CustomLayerEditor.GetDictinaryLayers();
 
             foreach (var layer in layers)
             {
@@ -588,7 +589,7 @@ public class LayerWindow : EditorWindow
     }
     private bool IsEditingLayerName(LayerData layerData)
     {
-        bool isEditing = LayerEditor.ED.SelectedLayerIds.Contains(layerData.Id);
+        bool isEditing = CustomLayerEditor.ED.SelectedLayerIds.Contains(layerData.Id);
         return isEditing;
     }
 }
