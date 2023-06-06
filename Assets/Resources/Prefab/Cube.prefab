@@ -68,7 +68,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 247c026b0e97e664fadb5d77a1051922, type: 2}
+  - {fileID: 2100000, guid: b79c11eb6114d734eaf03f5b1ae3e396, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -138,6 +138,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _moveDirection: 1
   _moveSpeed: 2
+  _exception: 0
 --- !u!114 &5858441545544377452
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -163,6 +164,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfff366e846e977409210d46d31cc2f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _direction: 1
   _snowSpeed: 2
   _swayIntensity: 1
   _swayAmount: 0.1
@@ -181,6 +183,8 @@ MonoBehaviour:
   _cubeSnowPrefab: {fileID: 0}
   _spawnInterval: 1
   _swayAmount: 1
+  _direction: 0
+  _randColor: 0
 --- !u!54 &-5060912621462585829
 Rigidbody:
   m_ObjectHideFlags: 0

@@ -247,7 +247,7 @@ public class LayerWindow : EditorWindow
                 }     
             }
 
-            GUILayout.BeginHorizontal(CustomLayerStyle.SetWhiteSkinBoxStyle());
+            GUILayout.BeginHorizontal(CustomLayerStyle.WhiteSkinBoxStyle());
 
             Texture2D layerSnapshot = CaptureLayerSnapshot(layerData); // ½º³À¼¦ °ü·Ã
             Rect imageRect = GUILayoutUtility.GetRect(50, 50);

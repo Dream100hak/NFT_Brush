@@ -11,3 +11,8 @@ public enum E_DockPosition
     Right,
     Bottom
 }
+
+public enum E_BrushType
+{
+    One, Square
+}

@@ -10,18 +10,64 @@ using UnityEditor;
 
 public class CustomLayerStyle 
 {
-#if UNITY_EDITOR
-    public static GUIStyle SetBrushTabStyle()
+    public static GUIStyle BrushColorLabelStyle(Texture2D tex)
     {
-        GUI.color = Color.clear;
-        GUIStyle boxStyle = new GUIStyle(GUI.skin.box);
-        boxStyle.border = new RectOffset(0, 0, 1, 1); // 원하는 테두리 크기로 조정할 수 있습니다.
-        
-        boxStyle.alignment = TextAnchor.MiddleCenter;
 
-        return boxStyle;
+        GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
+        labelStyle.alignment = TextAnchor.MiddleCenter;
+        labelStyle.contentOffset = new Vector2(1, 1);
+        labelStyle.normal.background = tex;
+
+        return labelStyle;
     }
-    public static GUIStyle SetToggleTabStyle()
+    public static GUIStyle BrushDistanceLabelStyle()
+    {
+
+        GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
+        labelStyle.alignment = TextAnchor.MiddleCenter;
+        labelStyle.contentOffset = new Vector2(1, 1);
+        labelStyle.normal.background = Resources.Load<Texture2D>("Textures/Icon/BrushScaleIcon");
+
+        return labelStyle;
+    }
+    public static GUIStyle BrushScaleLabelStyle(float value)
+    {
+        GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
+        labelStyle.alignment = TextAnchor.MiddleCenter;
+        labelStyle.contentOffset = new Vector2(1.04f, 1.04f);
+
+        labelStyle.fontSize = (int)Mathf.Lerp(10f, 30f, value);
+        labelStyle.fontStyle = FontStyle.Bold;
+
+        labelStyle.normal.background = Resources.Load<Texture2D>("Textures/Icon/BrushScaleIcon");
+
+        return labelStyle;
+    }
+
+#if UNITY_EDITOR
+    public static GUIStyle BrushTypeBtnStyle(E_BrushType brushType)
+    {
+        // GUI 스타일 객체 생성
+        GUIStyle toggleStyle = new GUIStyle(GUI.skin.toggle);
+        toggleStyle.fixedWidth = 40;
+        toggleStyle.fixedHeight = 40;
+
+        if(brushType == E_BrushType.Square)
+        {
+            toggleStyle.normal.background = Resources.Load<Texture2D>("Textures/Icon/BrushSquareIcon_Normal");
+            toggleStyle.onNormal.background = Resources.Load<Texture2D>("Textures/Icon/BrushSquareIcon_OnNormal");
+        }
+        else
+        {
+            toggleStyle.normal.background = Resources.Load<Texture2D>("Textures/Icon/BrushOneIcon_Normal");
+            toggleStyle.onNormal.background = Resources.Load<Texture2D>("Textures/Icon/BrushOneIcon_OnNormal");
+        }
+
+        toggleStyle.border = new RectOffset(4, 4, 4, 4);
+
+        return toggleStyle;
+    }
+    public static GUIStyle ToggleTabStyle()
     {
         // GUI 스타일 객체 생성
         GUIStyle toggleStyle = new GUIStyle(GUI.skin.toggle);
@@ -36,7 +82,7 @@ public class CustomLayerStyle
 
         return toggleStyle;
     }
-    public static GUIStyle SetToggleBoxStyle()
+    public static GUIStyle ToggleBoxStyle()
     {
         // GUI 색상 변경
         GUIStyle toggleBoxStyle = new GUIStyle(GUI.skin.box);
@@ -49,7 +95,7 @@ public class CustomLayerStyle
         return toggleBoxStyle;
     }
 
-    public static GUIStyle SetLableStyle(Color color)
+    public static GUIStyle CustomLableStyle(Color color)
     {
         // GUI 색상 변경
         GUIStyle labelStyle = new GUIStyle(EditorStyles.label);
@@ -57,12 +103,12 @@ public class CustomLayerStyle
 
         return labelStyle;
     }
-    public static GUIStyle SetWhilteLableStyle()
+    public static GUIStyle WhiteLableStyle()
     {
-        return SetLableStyle(Color.white);
+        return CustomLableStyle(Color.white);
     }
 
-    public static GUIStyle SetWhiteSkinBoxStyle()
+    public static GUIStyle WhiteSkinBoxStyle()
     {
 
         GUIStyle boxStyle = new GUIStyle(GUI.skin.box);

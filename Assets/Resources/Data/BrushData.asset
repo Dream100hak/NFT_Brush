@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5da79080e775d44990ac74f44adf415, type: 3}
   m_Name: BrushData
   m_EditorClassIdentifier: 
-  CubeSize: 0.722
-  PlacementDistance: 0.521
+  CubeSize: 0.303
+  PlacementDistance: 0.553
   CubeColor: {r: 0.11372549, g: 0.11372549, b: 0.11372549, a: 1}
   RotatorEnabled: 0
   MoverEnabled: 0

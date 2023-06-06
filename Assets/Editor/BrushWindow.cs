@@ -4,40 +4,100 @@ using UnityEditor;
 using UnityEngine;
 using System;
 using System.Linq;
+using UnityEngine.Rendering;
 
 public class BrushWindow : EditorWindow
 {
     private bool _showBrushSettings = true;
     private bool _showBrushEffect = true;
+    private bool _showBrushType = true;
+    private bool _showBrushColor = true;
+
+    private bool _brushOne = false;
+    private bool _brushSquare = false;
 
     private GUIStyle _tabBtnStyle = null;
+
+    private string _brushScaleValue = "0.5f";
+    private string _brushDistance  = "0.5f";
 
     [MenuItem("Photoshop/Brush")]
     public static void ShowWindow()
     {
        GetWindow<BrushWindow>("Brush");
     }
+    public void OnEnable()
+    {
+        ColorPaletteGUI.Color = Color.red;
+    }
 
     public void OnGUI()
     {
         float tabBoxPosX = 0;
         if (_tabBtnStyle == null)
-            _tabBtnStyle = CustomLayerStyle.SetToggleTabStyle();
+            _tabBtnStyle = CustomLayerStyle.ToggleTabStyle();
 
-       
+        _showBrushType = GUI.Toggle(new Rect(tabBoxPosX, 10, 40, 40), _showBrushType, "종류", _tabBtnStyle);
+        tabBoxPosX += 40f;
+
+        if (_showBrushType)
+        {
+
+            GUILayout.Space(60);
+            GUILayout.BeginHorizontal(GUI.skin.box);
+
+            _brushOne = GUILayout.Toggle(_brushOne, GUIContent.none, CustomLayerStyle.BrushTypeBtnStyle(E_BrushType.One));
+            _brushSquare = GUILayout.Toggle(_brushSquare, GUIContent.none, CustomLayerStyle.BrushTypeBtnStyle(E_BrushType.Square));
+
+            GUILayout.Space(5);
+            GUILayout.BeginVertical(GUILayout.Height(40));
+            GUILayout.FlexibleSpace();
+
+            GUILayout.Label("<-- Select Brush Mode One or Square", GUI.skin.label); // 텍스트를 중앙에 배치
+
+            GUILayout.FlexibleSpace();
+            GUILayout.EndVertical();
+            GUILayout.FlexibleSpace();
+
+            //CustomBrushEditor.ED.SnowEnabled = Utils.EditPropertyWithUndo("눈", CustomBrushEditor.ED.SnowEnabled, enbled => CustomBrushEditor.ED.SnowEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CustomBrushEditor.ED, 130f);
+            //if (CustomBrushEditor.ED.SnowEnabled)
+            //{
+            //    CustomBrushEditor.ED.Snow_SwayIntensity = Utils.EditPropertyWithUndo("강도", CustomBrushEditor.ED.Snow_SwayIntensity, speed => CustomBrushEditor.ED.Snow_SwayIntensity = speed, (label, value) => EditorGUILayout.FloatField(label, value), CustomBrushEditor.ED, 120f);
+            //    CustomBrushEditor.ED.Snow_SwayAmount = Utils.EditPropertyWithUndo("흔들림", CustomBrushEditor.ED.Snow_SwayAmount, speed => CustomBrushEditor.ED.Snow_SwayAmount = speed, (label, value) => EditorGUILayout.FloatField(label, value), CustomBrushEditor.ED, 110f);
+            //}
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+        }
+
         _showBrushSettings = GUI.Toggle(new Rect(tabBoxPosX, 10, 40, 40), _showBrushSettings, "설정", _tabBtnStyle);
         tabBoxPosX += 40f;
 
         if (_showBrushSettings)
         {
-            GUILayout.Space(60);
+            float space = _showBrushType ? 10 : 60;
+            GUILayout.Space(space);
             _showBrushEffect = false;
+
+            SetBrushScaleGUI();
+            SetBrushDistanceGUI();
+
             // 기본 옵션 [ 사이즈 / 간격 / 색상]
-            CustomBrushEditor.ED.CubeSize = Utils.EditPropertyWithUndo("크기", CustomBrushEditor.ED.CubeSize, newSize => CustomBrushEditor.ED.CubeSize = newSize, (label, value) => EditorGUILayout.Slider(label, value, 0.1f, 2f), CustomBrushEditor.ED);
-            CustomBrushEditor.ED.PlacementDistance = Utils.EditPropertyWithUndo("간격", CustomBrushEditor.ED.PlacementDistance, newDistance => CustomBrushEditor.ED.PlacementDistance = newDistance, (label, value) => EditorGUILayout.Slider(label, value, 0.1f, 1f), CustomBrushEditor.ED);
-            CustomBrushEditor.ED.CubeColor = Utils.EditPropertyWithUndo("색상", CustomBrushEditor.ED.CubeColor, newColor => CustomBrushEditor.ED.CubeColor = newColor, (label, value) => EditorGUILayout.ColorField(label, value), CustomBrushEditor.ED);
+            //   CustomBrushEditor.ED.CubeSize = Utils.EditPropertyWithUndo("크기", CustomBrushEditor.ED.CubeSize, newSize => CustomBrushEditor.ED.CubeSize = newSize, (label, value) => EditorGUILayout.Slider(label, value, 0.1f, 2f), CustomBrushEditor.ED);
+            //   CustomBrushEditor.ED.PlacementDistance = Utils.EditPropertyWithUndo("간격", CustomBrushEditor.ED.PlacementDistance, newDistance => CustomBrushEditor.ED.PlacementDistance = newDistance, (label, value) => EditorGUILayout.Slider(label, value, 0.1f, 1f), CustomBrushEditor.ED);
+            //   CustomBrushEditor.ED.CubeColor = Utils.EditPropertyWithUndo("색상", CustomBrushEditor.ED.CubeColor, newColor => CustomBrushEditor.ED.CubeColor = newColor, (label, value) => EditorGUILayout.ColorField(label, value), CustomBrushEditor.ED);
 
         }
+
+
+
+        _showBrushColor = GUI.Toggle(new Rect(tabBoxPosX, 10, 40, 40), _showBrushColor, "색상", _tabBtnStyle);
+        tabBoxPosX += 40f;
+
+        if(_showBrushColor)
+        {
+            SetBrushColorGUI();
+        }
+
 
         _showBrushEffect = GUI.Toggle(new Rect(tabBoxPosX, 10, 40, 40), _showBrushEffect, "효과", _tabBtnStyle);    
         tabBoxPosX += 40f;
@@ -60,7 +120,7 @@ public class BrushWindow : EditorWindow
 
             if (CustomBrushEditor.ED.RotatorEnabled)
             {
-                EditorGUILayout.BeginVertical(CustomLayerStyle.SetToggleBoxStyle());
+                EditorGUILayout.BeginVertical(CustomLayerStyle.ToggleBoxStyle());
 
                 CustomBrushEditor.ED.Random_RotSpeed = Utils.EditPropertyWithUndo("속도", CustomBrushEditor.ED.Random_RotSpeed, speed => CustomBrushEditor.ED.Random_RotSpeed = speed, (label, value) => EditorGUILayout.FloatField(label, value), CustomBrushEditor.ED, 120f);
 
@@ -83,7 +143,7 @@ public class BrushWindow : EditorWindow
 
                 GUILayout.BeginHorizontal(GUI.skin.box);
 
-                EditorGUILayout.BeginVertical(CustomLayerStyle.SetToggleBoxStyle());
+                EditorGUILayout.BeginVertical(CustomLayerStyle.ToggleBoxStyle());
                 CustomBrushEditor.ED.StraightEnabled = Utils.EditPropertyWithUndo("직선", CustomBrushEditor.ED.StraightEnabled, enbled => CustomBrushEditor.ED.StraightEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CustomBrushEditor.ED, 120f);
                 if (CustomBrushEditor.ED.StraightEnabled)
                 {
@@ -93,7 +153,7 @@ public class BrushWindow : EditorWindow
                 EditorGUILayout.EndVertical();
                 GUILayout.Space(5);
 
-                EditorGUILayout.BeginVertical(CustomLayerStyle.SetToggleBoxStyle());
+                EditorGUILayout.BeginVertical(CustomLayerStyle.ToggleBoxStyle());
                 CustomBrushEditor.ED.BlackholeEnabled = Utils.EditPropertyWithUndo("블랙홀", CustomBrushEditor.ED.BlackholeEnabled, enbled => CustomBrushEditor.ED.BlackholeEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CustomBrushEditor.ED, 110f);
                 if (CustomBrushEditor.ED.BlackholeEnabled)
                 {
@@ -102,7 +162,7 @@ public class BrushWindow : EditorWindow
                 EditorGUILayout.EndVertical();
                 GUILayout.Space(5);
 
-                EditorGUILayout.BeginVertical(CustomLayerStyle.SetToggleBoxStyle());
+                EditorGUILayout.BeginVertical(CustomLayerStyle.ToggleBoxStyle());
                 CustomBrushEditor.ED.SnowEnabled = Utils.EditPropertyWithUndo("눈", CustomBrushEditor.ED.SnowEnabled, enbled => CustomBrushEditor.ED.SnowEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CustomBrushEditor.ED, 130f);
                 if (CustomBrushEditor.ED.SnowEnabled)
                 {
@@ -128,7 +188,7 @@ public class BrushWindow : EditorWindow
             {
                 GUILayout.BeginHorizontal(GUI.skin.box);
 
-                EditorGUILayout.BeginVertical(CustomLayerStyle.SetToggleBoxStyle());
+                EditorGUILayout.BeginVertical(CustomLayerStyle.ToggleBoxStyle());
                 CustomBrushEditor.ED.SnowSpawnEnabled = Utils.EditPropertyWithUndo("눈", CustomBrushEditor.ED.SnowSpawnEnabled, enbled => CustomBrushEditor.ED.SnowSpawnEnabled = enbled, (label, value) => EditorGUILayout.Toggle(label, value), CustomBrushEditor.ED, 120f);
                 if (CustomBrushEditor.ED.SnowSpawnEnabled)
                 {
@@ -146,8 +206,6 @@ public class BrushWindow : EditorWindow
         }
     }
 
-  
- 
     private void CheckBrushEffectEnabled(bool prevStraightEnabled, bool prevBlackholeEnabled, bool prevSnowEnabled)
     {
         int cnt = 0;
@@ -166,4 +224,69 @@ public class BrushWindow : EditorWindow
         }
     }
 
+    private void SetBrushScaleGUI()
+    {
+        EditorGUILayout.BeginHorizontal(GUI.skin.box);
+
+        GUI.Label(GUILayoutUtility.GetRect(GUIContent.none, CustomLayerStyle.BrushScaleLabelStyle(CustomBrushEditor.ED.CubeSize), GUILayout.Width(60), GUILayout.Height(60)), "●", CustomLayerStyle.BrushScaleLabelStyle(CustomBrushEditor.ED.CubeSize));
+        GUILayout.Space(20);
+        EditorGUILayout.BeginVertical();
+
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.PrefixLabel("크기 : ");
+        GUILayout.Space(-20);
+        _brushScaleValue = EditorGUILayout.TextField(CustomBrushEditor.ED.CubeSize.ToString("F2"), GUILayout.MaxWidth(170));
+        EditorGUILayout.EndHorizontal();
+
+        GUILayout.Space(20);
+        Rect sliderRect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.MaxWidth(300),  GUILayout.Height(EditorGUIUtility.singleLineHeight));
+        CustomBrushEditor.ED.CubeSize = GUI.HorizontalSlider(sliderRect, CustomBrushEditor.ED.CubeSize, 0.1f, 1f);
+
+        EditorGUILayout.EndVertical();
+
+        EditorGUILayout.EndHorizontal();
+    }
+
+    private void SetBrushDistanceGUI()
+    {
+        EditorGUILayout.BeginHorizontal(GUI.skin.box);
+
+        float space = (int)(CustomBrushEditor.ED.PlacementDistance * 7);
+
+        string arrowText = "●" + new string(' ', (int)space) + "●";
+        GUI.Label(GUILayoutUtility.GetRect(GUIContent.none, CustomLayerStyle.BrushDistanceLabelStyle(), GUILayout.Width(60), GUILayout.Height(60)), arrowText, CustomLayerStyle.BrushDistanceLabelStyle());
+        GUILayout.Space(20);
+
+        EditorGUILayout.BeginVertical();
+
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.PrefixLabel("간격 : ");
+        GUILayout.Space(-20);
+        _brushDistance = EditorGUILayout.TextField(CustomBrushEditor.ED.PlacementDistance.ToString("F2"), GUILayout.MaxWidth(170));
+        EditorGUILayout.EndHorizontal();
+
+        GUILayout.Space(20);
+        Rect sliderRect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.MaxWidth(300), GUILayout.Height(EditorGUIUtility.singleLineHeight));
+        CustomBrushEditor.ED.PlacementDistance = GUI.HorizontalSlider(sliderRect, CustomBrushEditor.ED.PlacementDistance, 0.1f, 1f);
+
+        EditorGUILayout.EndVertical();
+
+        EditorGUILayout.EndHorizontal();
+    }
+
+    private void SetBrushColorGUI()
+    {
+        EditorGUILayout.BeginHorizontal(GUI.skin.box);
+
+        GUI.Label(GUILayoutUtility.GetRect(GUIContent.none, CustomLayerStyle.BrushColorLabelStyle(EditorGUIUtility.whiteTexture), GUILayout.Width(60), GUILayout.Height(60)), "", CustomLayerStyle.BrushColorLabelStyle(EditorGUIUtility.whiteTexture));
+        GUILayout.Space(70);
+
+        GUI.Label(GUILayoutUtility.GetRect(GUIContent.none, CustomLayerStyle.BrushColorLabelStyle(ColorPaletteGUI._satTex), GUILayout.Width(200), GUILayout.Height(200)), "", CustomLayerStyle.BrushColorLabelStyle(ColorPaletteGUI._satTex));
+
+        GUILayout.Space(20);
+        GUI.Label(GUILayoutUtility.GetRect(GUIContent.none, CustomLayerStyle.BrushColorLabelStyle(ColorPaletteGUI._hueTex), GUILayout.Width(20), GUILayout.Height(200)), "", CustomLayerStyle.BrushColorLabelStyle(ColorPaletteGUI._hueTex));
+
+        GUILayout.FlexibleSpace();
+        EditorGUILayout.EndHorizontal();
+    }
 }
