@@ -9,7 +9,6 @@ public class Utils
 {
     public static Stack<Action> _undoStack = new Stack<Action>();
     public static Stack<Action> _redoStack = new Stack<Action>();
-
     public static Stack<Action> UndoStack { get => _undoStack; }
 
     public static void UndoExecute()

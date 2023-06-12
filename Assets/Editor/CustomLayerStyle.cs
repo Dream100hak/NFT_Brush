@@ -10,17 +10,31 @@ using UnityEditor;
 
 public class CustomLayerStyle 
 {
-    public static GUIStyle BrushColorLabelStyle(Texture2D tex)
+    public static Rect GetRect(float width, float height , GUIStyle customStyle = null)
+    {
+        if(customStyle == null)
+            customStyle = GUIStyle.none;
+
+        return GUILayoutUtility.GetRect(GUIContent.none, customStyle, GUILayout.Width(width), GUILayout.Height(height));
+    }
+
+    public static GUIStyle BrushColor(Color color)
     {
 
         GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
         labelStyle.alignment = TextAnchor.MiddleCenter;
         labelStyle.contentOffset = new Vector2(1, 1);
-        labelStyle.normal.background = tex;
+
+        Texture2D texture = new Texture2D(1, 1);
+        texture.SetPixel(0, 0, color);
+        texture.Apply();
+
+        labelStyle.normal.background = texture;
 
         return labelStyle;
+
     }
-    public static GUIStyle BrushDistanceLabelStyle()
+    public static GUIStyle BrushDistance()
     {
 
         GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
@@ -30,7 +44,7 @@ public class CustomLayerStyle
 
         return labelStyle;
     }
-    public static GUIStyle BrushScaleLabelStyle(float value)
+    public static GUIStyle BrushScale(float value)
     {
         GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
         labelStyle.alignment = TextAnchor.MiddleCenter;
