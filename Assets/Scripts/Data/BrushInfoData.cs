@@ -1,11 +1,16 @@
+using System.Collections.Generic;
 using UnityEngine;
+using static UnityEditor.Progress;
 
-[CreateAssetMenu(fileName = "BrushEditorData", menuName = "BrushEditorData/Data", order = 1)]
-public class BrushEditorData : ScriptableObject
+[CreateAssetMenu(fileName = "BrushInfoData", menuName = "BrushInfoData/Data", order = 1)]
+public class BrushInfoData : ScriptableObject
 {
-    public float CubeSize = 0.5f;
+
+    public List<Brush> Brushes;
+
+    public float BrushSize = 0.5f;
     public float PlacementDistance  = 1.0f;
-    public Color CubeColor = Color.white;
+    public Color BrushColor = Color.white;
 
     public bool RotatorEnabled = false;
     public bool MoverEnabled = false;
@@ -27,5 +32,24 @@ public class BrushEditorData : ScriptableObject
     public bool SnowSpawnEnabled = false;
     public float SnowSpawn_SwayIntensity = 1.0f;
     public float SnowSpawn_SwayAmount = 0.1f;
+
+    public Brush GetBrush(int id)
+    {
+        return Brushes.Find(item => item.Id == id);
+    }
+    public void SetSelectedBrushId(int id)
+    {
+        foreach(Brush brush in Brushes)
+        {
+            brush.Selected = false;
+        }
+
+        Brushes[id].Selected = true;
+    }
+
+    public int GetSelectedBrushId()
+    {
+        return Brushes.FindIndex(item => item.Selected == true);
+    }
 
 }

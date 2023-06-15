@@ -1,8 +1,13 @@
 using UnityEngine;
 
-public class CubeResizer : MonoBehaviour
+public class EffectResizer : MonoBehaviour , IEffect
 {
     private const float SHRINK_TIME = 0.2f; // 큐브 충돌 후 축소하는 시간
+
+    public void ApplyEffect(BrushInfoData ED)
+    {
+        throw new System.NotImplementedException();
+    }
 
     private void OnTriggerEnter(Collider other)
     {
@@ -14,8 +19,6 @@ public class CubeResizer : MonoBehaviour
 
     private System.Collections.IEnumerator Shrink()
     {
-        const float SHRINK_SPEED = 1.0f / SHRINK_TIME; // 큐브 축소 속도
-
         float time = 0f;
         Vector3 originalScale = transform.localScale;
 

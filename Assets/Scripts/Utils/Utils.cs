@@ -72,13 +72,15 @@ public class Utils
         EditorWindow[] windows = Resources.FindObjectsOfTypeAll(windowType) as EditorWindow[];
         return windows != null && windows.Length > 0;
     }
+    public static GUIContent GetIconContent(string name)
+    {
+        return EditorGUIUtility.IconContent(name);
+    }
 
 #endif
-
     public static Vector3 SetZVectorZero(Vector3 vec)
     {
         vec.z = 0;
         return vec;
     }
-
 }

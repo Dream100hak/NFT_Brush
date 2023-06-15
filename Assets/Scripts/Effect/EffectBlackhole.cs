@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class CubeBlackhole : MonoBehaviour
+public class EffectBlackhole : MonoBehaviour , IEffect
 {
     private Transform _blackholeCenter;
     private float _attractionForce = 1.0f;
@@ -10,6 +10,11 @@ public class CubeBlackhole : MonoBehaviour
     private Vector3 _startPosition;
     private Vector3 _startScale;
     private Renderer _cubeRenderer;
+    public void ApplyEffect(BrushInfoData ED)
+    {
+        enabled = ED.BlackholeEnabled;
+        AttractionForce = ED.Blackhole_AttractionForce;
+    }
 
     void Start()
     {
@@ -50,4 +55,6 @@ public class CubeBlackhole : MonoBehaviour
             _cubeRenderer.material.color = currentColor;
         }
     }
+
+ 
 }

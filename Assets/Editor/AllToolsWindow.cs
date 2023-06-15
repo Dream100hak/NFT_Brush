@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class AllToolsWindow : EditorWindow
 {
-    BrushWindow _brushWindow;
+     BrushWindow _brushWindow;
 
     [MenuItem("Photoshop/All Tools %#w")]
     public static void ShowWindow()
@@ -25,7 +25,7 @@ public class AllToolsWindow : EditorWindow
         float height = 600;
         float xPos = (Screen.currentResolution.width - width) * 0.5f;
         float yPos = (Screen.currentResolution.height - height) * 0.5f;
-
+         
         _brushWindow = CreateInstance<BrushWindow>();
     }
     private void OnDisable()

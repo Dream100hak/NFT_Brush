@@ -125,6 +125,8 @@ public class DrawingWindow : EditorWindow
     }
     private void OnGUI()
     {
+
+
         DrawResolutionBox();
 
         Rect textureRect = GetTextureRect();
@@ -140,7 +142,7 @@ public class DrawingWindow : EditorWindow
 
         Repaint();
 
-        if (CustomBrushEditor.IsPlacing && CustomBrushEditor.CubePrefab != null)
+        if (BrushInfo.IsPlacing && BrushInfo.CurrentBrush != null)
         {
             Event e = Event.current;
             Vector2 mousePos = e.mousePosition;
@@ -171,12 +173,12 @@ public class DrawingWindow : EditorWindow
                     if (_initialMousePos == Vector3.zero)
                     {
                         _initialMousePos = hitInfo.point;
-                        CustomBrushEditor.PlaceCube(Utils.SetZVectorZero(hitInfo.point));
+                        BrushInfo.PaintBrush(Utils.SetZVectorZero(hitInfo.point));
                         e.Use();
                     }
                     else if (!shiftPressed)
                     {
-                        CustomBrushEditor.PlaceCube(Utils.SetZVectorZero(hitInfo.point));
+                        BrushInfo.PaintBrush(Utils.SetZVectorZero(hitInfo.point));
                         _initialMousePos = hitInfo.point;
                         e.Use();
                     }
@@ -188,24 +190,24 @@ public class DrawingWindow : EditorWindow
                     {
                         Vector3 direction = (hitInfo.point - _initialMousePos).normalized;
                         float distanceBetweenCubes = Vector3.Distance(hitInfo.point, _initialMousePos);
-                        int numberOfCubes = Mathf.RoundToInt(distanceBetweenCubes / CustomBrushEditor.ED.PlacementDistance);
+                        int numberOfCubes = Mathf.RoundToInt(distanceBetweenCubes / BrushInfo.ED.PlacementDistance);
 
                         Debug.Log("Num Of Cube : " + (numberOfCubes + 1));
 
                         for (int i = 1; i <= numberOfCubes; i++)
                         {
-                            Vector3 cubePosition = _initialMousePos + direction * CustomBrushEditor.ED.PlacementDistance * i;
-                            CustomBrushEditor.PlaceCube(Utils.SetZVectorZero(cubePosition));
+                            Vector3 cubePosition = _initialMousePos + direction * BrushInfo.ED.PlacementDistance * i;
+                            BrushInfo.PaintBrush(Utils.SetZVectorZero(cubePosition));
                         }
                     }
-                    CustomLayerEditor.CurrentLayer = null;
+                    LayerInfo.CurrentLayer = null;
                     _initialMousePos = Vector3.zero;
                 }
                 else if (e.type == EventType.MouseDrag && e.button == 0 && !shiftPressed)
                 {
-                    if (Vector3.Distance(_lastPlacedPos, hitInfo.point) >= CustomBrushEditor.ED.PlacementDistance)
+                    if (Vector3.Distance(_lastPlacedPos, hitInfo.point) >= BrushInfo.ED.PlacementDistance)
                     {
-                        CustomBrushEditor.PlaceCube(Utils.SetZVectorZero(hitInfo.point));
+                        BrushInfo.PaintBrush(Utils.SetZVectorZero(hitInfo.point));
                         _lastPlacedPos = hitInfo.point;
                     }
                     e.Use();
@@ -215,15 +217,16 @@ public class DrawingWindow : EditorWindow
 
                 if (e.type == EventType.MouseDrag && e.button == 1)
                 {
-                    CustomBrushEditor.RemoveCube(hitInfo);
+                    BrushInfo.RemoveBrush(hitInfo);
                 }
                 else if (e.type == EventType.MouseDown && e.button == 1)
                 {
-                    CustomBrushEditor.RemoveCube(hitInfo);
+                    BrushInfo.RemoveBrush(hitInfo);
                 }
             }
         }
 
+        GUILayout.Box(EditorGUIUtility.IconContent("_Popup@2x"));
     }
 
     private void DrawResolutionBox()

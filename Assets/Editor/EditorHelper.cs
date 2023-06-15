@@ -3,19 +3,45 @@ using System.Collections.Generic;
 
 using UnityEngine;
 using UnityEditor.Graphs;
+using System;
+using static UnityEditor.Progress;
 
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-public class CustomLayerStyle 
+public class EditorHelper 
 {
+    public static void DrawGridBrushItems(int space, int itemCnt, Action<int> onDrawer)
+    {
+        GUILayout.BeginHorizontal();
+        for (int i = 0; i < itemCnt; i++)
+        {
+            onDrawer(i);
+            GUILayout.Space(space);
+        }
+        GUILayout.EndHorizontal();
+    }
+
     public static Rect GetRect(float width, float height , GUIStyle customStyle = null)
     {
         if(customStyle == null)
             customStyle = GUIStyle.none;
 
         return GUILayoutUtility.GetRect(GUIContent.none, customStyle, GUILayout.Width(width), GUILayout.Height(height));
+    }
+    public static GUIStyle SelectedBrushButton(GameObject target , bool isSelected)
+    {
+        GUIStyle style = new GUIStyle(GUI.skin.button);
+        style.normal.background = AssetPreview.GetAssetPreview(target);
+        style.alignment = TextAnchor.MiddleCenter;
+        style.contentOffset = new Vector2(0, 30);
+
+        style.normal.textColor = isSelected ? Color.green : Color.white;
+        style.fontStyle = FontStyle.Bold;
+        
+        return style;
+
     }
 
     public static GUIStyle BrushColor(Color color)
@@ -66,15 +92,16 @@ public class CustomLayerStyle
         toggleStyle.fixedWidth = 40;
         toggleStyle.fixedHeight = 40;
 
-        if(brushType == E_BrushType.Square)
+        switch (brushType)
         {
-            toggleStyle.normal.background = Resources.Load<Texture2D>("Textures/Icon/BrushSquareIcon_Normal");
-            toggleStyle.onNormal.background = Resources.Load<Texture2D>("Textures/Icon/BrushSquareIcon_OnNormal");
-        }
-        else
-        {
-            toggleStyle.normal.background = Resources.Load<Texture2D>("Textures/Icon/BrushOneIcon_Normal");
-            toggleStyle.onNormal.background = Resources.Load<Texture2D>("Textures/Icon/BrushOneIcon_OnNormal");
+            case E_BrushType.Box:
+                toggleStyle.normal.background = Resources.Load<Texture2D>("Textures/Icon/BrushSquareIcon_Normal");
+                toggleStyle.onNormal.background = Resources.Load<Texture2D>("Textures/Icon/BrushSquareIcon_OnNormal");
+                break;
+            case E_BrushType.One:
+                toggleStyle.normal.background = Resources.Load<Texture2D>("Textures/Icon/BrushOneIcon_Normal");
+                toggleStyle.onNormal.background = Resources.Load<Texture2D>("Textures/Icon/BrushOneIcon_OnNormal");
+                break;
         }
 
         toggleStyle.border = new RectOffset(4, 4, 4, 4);
@@ -109,17 +136,19 @@ public class CustomLayerStyle
         return toggleBoxStyle;
     }
 
-    public static GUIStyle CustomLableStyle(Color color)
+    public static GUIStyle CustomLabelStyle(Color color)
     {
         // GUI 색상 변경
         GUIStyle labelStyle = new GUIStyle(EditorStyles.label);
         labelStyle.normal.textColor = color;
 
+
+
         return labelStyle;
     }
-    public static GUIStyle WhiteLableStyle()
+    public static GUIStyle WhiteLabelStyle()
     {
-        return CustomLableStyle(Color.white);
+        return CustomLabelStyle(Color.white);
     }
 
     public static GUIStyle WhiteSkinBoxStyle()

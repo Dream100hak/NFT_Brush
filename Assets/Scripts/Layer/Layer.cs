@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-public class LayerData : MonoBehaviour
+public class Layer : MonoBehaviour
 {
     [SerializeField]
     private int _id = -1;

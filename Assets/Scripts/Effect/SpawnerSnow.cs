@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 
-public class SnowSpawner : MonoBehaviour
+public class SpawnerSnow : MonoBehaviour , ISpawner
 {
     [SerializeField]
     private GameObject _cubeSnowPrefab;
@@ -24,6 +24,13 @@ public class SnowSpawner : MonoBehaviour
     [SerializeField]
     private bool _randColor = false;
 
+    public void ApplySpawner(BrushInfoData ED , GameObject go)
+    {
+        enabled = ED.SnowSpawnEnabled;
+        CubeSnowPrefab = go;
+        SwayAmount = ED.SnowSpawn_SwayAmount;
+        SwayIntensity = ED.SnowSpawn_SwayIntensity;
+    }
     private void Awake()
     {
         _spawnInterval = Random.Range(3, 10f);
@@ -70,19 +77,20 @@ public class SnowSpawner : MonoBehaviour
             }
         }
 
-        if(GetComponent<CubeRotator>().enabled)
+        if(GetComponent<EffectRotator>().enabled)
         {
-            newCubeSnow.GetComponent<CubeRotator>().enabled = true;
-            newCubeSnow.GetComponent<CubeRotator>().RotationSpeed = GetComponent<CubeRotator>().RotationSpeed;
+            newCubeSnow.GetComponent<EffectRotator>().enabled = true;
+            newCubeSnow.GetComponent<EffectRotator>().RotationSpeed = GetComponent<EffectRotator>().RotationSpeed;
         }
 
-        newCubeSnow.GetComponent<CubeSnow>().enabled = true;
-        newCubeSnow.GetComponent<CubeSnow>().SwayAmount = SwayAmount;
-        newCubeSnow.GetComponent<CubeSnow>().SwayIntensity = _swayIntensity;
-        newCubeSnow.GetComponent<CubeSnow>().Direction = _direction;
-        newCubeSnow.GetComponent<CubeSnow>().DestroyMode = true;
+        newCubeSnow.GetComponent<EffectSnow>().enabled = true;
+        newCubeSnow.GetComponent<EffectSnow>().SwayAmount = SwayAmount;
+        newCubeSnow.GetComponent<EffectSnow>().SwayIntensity = _swayIntensity;
+        newCubeSnow.GetComponent<EffectSnow>().Direction = _direction;
+        newCubeSnow.GetComponent<EffectSnow>().DestroyMode = true;
 
         newCubeSnow.GetComponent<BoxCollider>().isTrigger = false;
-        newCubeSnow.AddComponent<CubeResizer>();
+        newCubeSnow.AddComponent<EffectResizer>();
     }
+
 }

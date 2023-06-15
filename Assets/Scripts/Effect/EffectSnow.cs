@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class CubeSnow : MonoBehaviour
+public class EffectSnow : MonoBehaviour , IEffect
 {
     private bool _destroyMode = false;
     public bool DestroyMode { get => _destroyMode; set { _destroyMode = value; } }
@@ -24,7 +24,12 @@ public class CubeSnow : MonoBehaviour
     private Vector3 _startPosition;
     private Camera _mainCamera;
     private float _noiseOffset;
-
+    public void ApplyEffect(BrushInfoData ED)
+    {
+        enabled = ED.SnowEnabled;
+        SwayIntensity = ED.Snow_SwayIntensity;
+        SwayAmount = ED.Snow_SwayAmount;
+    }
     void Start()
     {
         _startPosition = transform.position;
@@ -67,4 +72,6 @@ public class CubeSnow : MonoBehaviour
                 Destroy(gameObject);
         }
     }
+
+ 
 }

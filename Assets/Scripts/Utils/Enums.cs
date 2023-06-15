@@ -11,8 +11,14 @@ public enum E_DockPosition
     Right,
     Bottom
 }
-
+public enum E_BrushOption
+{
+    Type,
+    Setting,
+    Color,
+    Effect
+}
 public enum E_BrushType
 {
-    One, Square
+    One, Box , Capsule
 }

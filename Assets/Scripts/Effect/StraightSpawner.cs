@@ -49,18 +49,18 @@ public class StraightSpawner : MonoBehaviour
             cubeSnowRenderer.material = parentRenderer.material;
         }
 
-        if (GetComponent<CubeRotator>().enabled)
+        if (GetComponent<EffectRotator>().enabled)
         {
-            newStraightObj.GetComponent<CubeRotator>().enabled = true;
-            newStraightObj.GetComponent<CubeRotator>().RotationSpeed = GetComponent<CubeRotator>().RotationSpeed;
+            newStraightObj.GetComponent<EffectRotator>().enabled = true;
+            newStraightObj.GetComponent<EffectRotator>().RotationSpeed = GetComponent<EffectRotator>().RotationSpeed;
         }
 
-        newStraightObj.GetComponent<CubeStraight>().enabled = true;
-        newStraightObj.GetComponent<CubeStraight>().MoveSpeed = MoveSpeed;
-        newStraightObj.GetComponent<CubeStraight>().MoveDirection = MoveDirection;
-        newStraightObj.GetComponent<CubeStraight>().DestroyMode = true;
+        newStraightObj.GetComponent<EffectStraight>().enabled = true;
+        newStraightObj.GetComponent<EffectStraight>().MoveSpeed = MoveSpeed;
+        newStraightObj.GetComponent<EffectStraight>().MoveDirection = MoveDirection;
+        newStraightObj.GetComponent<EffectStraight>().DestroyMode = true;
 
         newStraightObj.GetComponent<BoxCollider>().isTrigger = false;
-        newStraightObj.AddComponent<CubeResizer>();
+        newStraightObj.AddComponent<EffectResizer>();
     }
 }

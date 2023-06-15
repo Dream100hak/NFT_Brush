@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CubeRotator : MonoBehaviour
+public class EffectRotator : MonoBehaviour , IEffect
 {
     // 회전 축 범위 (X, Y, Z)
     public Vector3 _rotationAxisRange = new Vector3(1f, 1f, 1f);
@@ -13,6 +13,12 @@ public class CubeRotator : MonoBehaviour
     //스피드
     private float _rotationSpeed = 50.0f;
     public float RotationSpeed { get =>_rotationSpeed; set => _rotationSpeed = value; }
+
+    public void ApplyEffect(BrushInfoData ED)
+    {
+        enabled = ED.RotatorEnabled;
+        RotationSpeed = ED.Random_RotSpeed;
+    }
 
     void Start()
     {

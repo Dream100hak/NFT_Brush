@@ -7,10 +7,10 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class CustomLayerEditor
+public class LayerInfo
 {
-    private static LayerEditorData s_editorData => GetLayerEditorData();
-    public static LayerEditorData ED { get => s_editorData; }
+    private static LayerInfoData s_editorData => GetLayerEditorData();
+    public static LayerInfoData ED { get => s_editorData; }
 
     private static int s_generateId;
     public static int GenerateId { get => s_generateId; set => s_generateId = value; }
@@ -26,7 +26,7 @@ public class CustomLayerEditor
     private static Transform s_currentLayer;
     public static Transform CurrentLayer { get => s_currentLayer; set => s_currentLayer = value; }
 
-    public static LayerEditorData GetLayerEditorData() { return Resources.Load<LayerEditorData>("Data/LayerEditorData"); }
+    public static LayerInfoData GetLayerEditorData() { return Resources.Load<LayerInfoData>("Data/LayerInfoData"); }
 
     [InitializeOnLoadMethod]
     private static void Initialize()
@@ -57,8 +57,8 @@ public class CustomLayerEditor
     //씬 동기화 작업
     public static void InitializeLayers()
     {
-        LayerData[] layersInScene = UnityEngine.Object.FindObjectsOfType<LayerData>();
-        foreach (LayerData layerData in layersInScene)
+        Layer[] layersInScene = UnityEngine.Object.FindObjectsOfType<Layer>();
+        foreach (Layer layerData in layersInScene)
         {
             int id = layerData.Id;
             if (!LayerObjects.ContainsKey(id))
@@ -92,19 +92,19 @@ public class CustomLayerEditor
             newLayerId = s_generateId;
         }
 
-        int prevChildCount = CustomBrushEditor.CubeParent.childCount;
+        int prevChildCount = BrushInfo.BrushParent.childCount;
 
         GameObject newLayer = new GameObject("새 레이어 " + newLayerId.ToString("00"));
-        newLayer.AddComponent(typeof(LayerData));
-        newLayer.transform.SetParent(CustomBrushEditor.CubeParent);
+        newLayer.AddComponent(typeof(Layer));
+        newLayer.transform.SetParent(BrushInfo.BrushParent);
         newLayer.transform.SetSiblingIndex(0);
 
         newLayer.transform.localPosition = new Vector3(0, 0, -0.01f * prevChildCount);       
         
-        newLayer.GetComponent<LayerData>().Id = newLayerId;
-        newLayer.GetComponent<LayerData>().CreationTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        newLayer.GetComponent<LayerData>().Name = newLayer.name;
-        newLayer.GetComponent<LayerData>().HasChanged = true;
+        newLayer.GetComponent<Layer>().Id = newLayerId;
+        newLayer.GetComponent<Layer>().CreationTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        newLayer.GetComponent<Layer>().Name = newLayer.name;
+        newLayer.GetComponent<Layer>().HasChanged = true;
 
         LayerObjects.Add(newLayerId, newLayer.transform);
         s_currentLayer = newLayer.transform;
@@ -153,15 +153,15 @@ public class CustomLayerEditor
 
         GameObject newLayer = GameObject.Instantiate(originalLayer.gameObject); // Clone the original layer
         newLayer.name = originalLayer.name + " Copy"; // Name the new layer
-        newLayer.transform.SetParent(CustomBrushEditor.CubeParent); // Set parent
+        newLayer.transform.SetParent(BrushInfo.BrushParent); // Set parent
         newLayer.transform.SetSiblingIndex(0); // Set sibling index
 
-        newLayer.transform.localPosition = originalLayer.localPosition + direction * CustomBrushEditor.ED.PlacementDistance;
+        newLayer.transform.localPosition = originalLayer.localPosition + direction * BrushInfo.ED.PlacementDistance;
 
-        newLayer.GetComponent<LayerData>().Id = newLayerId;
-        newLayer.GetComponent<LayerData>().CreationTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        newLayer.GetComponent<LayerData>().Name = newLayer.name;
-        newLayer.GetComponent<LayerData>().HasChanged = true;
+        newLayer.GetComponent<Layer>().Id = newLayerId;
+        newLayer.GetComponent<Layer>().CreationTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        newLayer.GetComponent<Layer>().Name = newLayer.name;
+        newLayer.GetComponent<Layer>().HasChanged = true;
 
         LayerObjects.Add(newLayerId, newLayer.transform);
         s_currentLayer = newLayer.transform;
@@ -200,31 +200,31 @@ public class CustomLayerEditor
         {
             if (layerObj.Value == null)
                 continue;
-            layerObj.Value.GetComponent<LayerData>().HasChanged = true;
+            layerObj.Value.GetComponent<Layer>().HasChanged = true;
         }
 
     }
-    public static  List<LayerData> GetLayerDatas()
+    public static  List<Layer> GetLayerDatas()
     {
-        List<LayerData> layerDatas = new List<LayerData>();
+        List<Layer> layerDatas = new List<Layer>();
 
         foreach (var layerObj in LayerObjects)
         {
             if (layerObj.Value == null)
                 continue;
-            layerDatas.Add(layerObj.Value.GetComponent<LayerData>());
+            layerDatas.Add(layerObj.Value.GetComponent<Layer>());
         }
 
         return layerDatas;
     }
-    public static List<LayerData> GetLayerOrders()
+    public static List<Layer> GetLayerOrders()
     {
-        List<LayerData> layerDatas = new List<LayerData>();
+        List<Layer> layerDatas = new List<Layer>();
 
-        Transform cubeParent = CustomBrushEditor.CubeParent;
+        Transform cubeParent = BrushInfo.BrushParent;
         foreach (Transform child in cubeParent)
         {
-            LayerData layerData = child.GetComponent<LayerData>();
+            Layer layerData = child.GetComponent<Layer>();
             if (layerData != null)
                 layerDatas.Add(layerData);
         }
@@ -245,15 +245,15 @@ public class CustomLayerEditor
 
     public static Dictionary<int, Transform> GetDictinaryLayers()
     {
-        Transform cubeParent = CustomBrushEditor.GetCubeParent();
+        Transform cubeParent = BrushInfo.GetBrushParent();
         Dictionary<int, Transform> layers = new Dictionary<int, Transform>();
 
         for (int i = 0; i < cubeParent.childCount; i++)
         {
             Transform childLayer = cubeParent.GetChild(i);
 
-            int id = childLayer.GetComponent<LayerData>().Id;
-            string name = childLayer.GetComponent<LayerData>().Name;
+            int id = childLayer.GetComponent<Layer>().Id;
+            string name = childLayer.GetComponent<Layer>().Name;
 
             if (!layers.ContainsKey(id))
                 layers.Add(id, childLayer);
@@ -271,7 +271,7 @@ public class CustomLayerEditor
 
         var remainingLayerObjects = LayerObjects
               .Where(x => x.Value != null)
-              .OrderByDescending(x => x.Value.GetComponent<LayerData>().CreationTimestamp);
+              .OrderByDescending(x => x.Value.GetComponent<Layer>().CreationTimestamp);
 
         if (remainingLayerObjects.Any())
         {

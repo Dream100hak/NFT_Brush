@@ -1,7 +1,7 @@
 using System.IO.IsolatedStorage;
 using UnityEngine;
 
-public class CubeStraight : MonoBehaviour
+public class EffectStraight : MonoBehaviour , IEffect
 {
     private bool _destroyMode = false;
     public bool DestroyMode { get => _destroyMode; set { _destroyMode = value; } }
@@ -16,8 +16,13 @@ public class CubeStraight : MonoBehaviour
     private Vector3 _startPosition;
     private Camera _mainCamera;
 
-    public bool _exception; 
-
+    public bool _exception;
+    public void ApplyEffect(BrushInfoData ED)
+    {
+        enabled = ED.StraightEnabled;
+        MoveSpeed = ED.Straight_MoveSpeed;
+        MoveDirection = ED.Straight_MoveDirection;
+    }
     void Start()
     {
         _startPosition = transform.position;
@@ -60,4 +65,6 @@ public class CubeStraight : MonoBehaviour
         }
 
     }
+
+ 
 }
