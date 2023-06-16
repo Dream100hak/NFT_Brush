@@ -1,74 +1,62 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using System;
 using System.Linq;
-using UnityEngine.Rendering;
-using UnityEditor.UIElements;
-using UnityEngine.UIElements;
-using NUnit.Framework;
-using Unity.VisualScripting;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
-using UnityEditor.Graphs;
+
 
 public class BrushWindow : EditorWindow
 {
-
-    private bool[] _showBrushTabs = new bool[4];
+    private bool[] _showBrushTabs = new bool[3];
     int _selectedTabCnt = 0;
-    private GUIStyle _tabBtnStyle = null;
 
-    public static Rect s_satRect;
-    public static Rect s_knobSVRect = new Rect(332 , 258 ,10, 10);
-    public static Rect s_hueRect;
-    public static Rect s_knobHueRect = new Rect(343 ,458 ,10,10);
-    public static Action _update;
-
-    private string _brushScale = "0.5f";
-    private string _brushDist = "0.5f";
+    private Rect _svRect, _knobSVRect;
+    private Rect _hueRect , _knobHueRect;
+    private Action _actPaletteUpdate;
 
     [MenuItem("Photoshop/Brush")]
-    public static void ShowWindow()
+    public static void ShowWindow() => GetWindow<BrushWindow>("Brush");
+    private void OnSceneOpened(Scene scene, OpenSceneMode mode) => Initialize();
+    private void RefreshTabBtn()
     {
-       GetWindow<BrushWindow>("Brush");
+        for (int i = 0; i < _showBrushTabs.Length; i++)
+            _showBrushTabs[i] = EditorPrefs.GetBool("ShowBrushTab_" + i, true);
     }
 
-    private void OnSceneOpened(Scene scene, OpenSceneMode mode)
-    {
-        Initialize();
-    }
-    private void OnPlayModeStateChanged(PlayModeStateChange state)
-    {
-        Initialize();
-    }
     private void Initialize()
     {
+        ColorPaletteGUI.Color = BrushInfo.ED.BrushColor;
+        ColorPaletteGUI.Hue = BrushInfo.ED.Hue;
+        ColorPaletteGUI.Saturation = BrushInfo.ED.SV;
+        ColorPaletteGUI.Value = BrushInfo.ED.Value;
+        ColorPaletteGUI.ApplyHue();
+        ColorPaletteGUI.ApplySaturation();
+
+        _knobSVRect.position = BrushInfo.ED.SVPos;
+        _knobHueRect.position = BrushInfo.ED.HuePos;
+
         Action dragH = null;
         Action dragSV = null;
         Action idle = () =>
         {
             Event e = Event.current;
 
-            if (e.type == EventType.MouseDown)
+            if (e.type == EventType.MouseDown && e.button == 0)
             {
-                if (e.button == 0)
+                if (_hueRect.Contains(e.mousePosition))
                 {
-                    if (s_hueRect.Contains(e.mousePosition))
-                    {
-                        DragHue();
-                        _update = dragH;
-                    }
-                    if (s_satRect.Contains(e.mousePosition))
-                    {
-                        DragSV();
-                        _update = dragSV;
-                    }
+                    DragHue();
+                    _actPaletteUpdate = dragH;
+                }
+                if (_svRect.Contains(e.mousePosition))
+                {
+                    DragSV();
+                    _actPaletteUpdate = dragSV;
                 }
             }
         };
-
+        //HUE 
         dragH = () =>
         {
             Event e = Event.current;
@@ -78,11 +66,11 @@ public class BrushWindow : EditorWindow
 
             else if (e.type == EventType.MouseUp)
             {
-                _update = idle;
+                _actPaletteUpdate = idle;
                 e.Use();
             }
         };
-
+        //SATURATION 
         dragSV = () =>
         {
             Event e = Event.current;
@@ -92,31 +80,40 @@ public class BrushWindow : EditorWindow
 
             else if (e.type == EventType.MouseUp)
             {
-                _update = idle;
+                _actPaletteUpdate = idle;
                 e.Use();
             }
         };
 
-        _update = idle;
+        _actPaletteUpdate = idle;
     }
     public void OnEnable()
     {
-        ColorPaletteGUI.Color = Color.red;
+        RefreshTabBtn();
         Initialize();
+        EditorSceneManager.sceneOpened += OnSceneOpened;
     }
 
+    private void OnDisable()
+    {
+        EditorSceneManager.sceneOpened -= OnSceneOpened;
+    }
     public void DragHue()
     {
         Vector2 mousePos = Event.current.mousePosition;
-        float y = Mathf.Clamp(mousePos.y - s_hueRect.y, 0, s_hueRect.height);
-        ColorPaletteGUI.Hue = y / s_hueRect.height;
+        float y = Mathf.Clamp(mousePos.y - _hueRect.y, 0, _hueRect.height);
+        ColorPaletteGUI.Hue = y / _hueRect.height;
+
+        BrushInfo.ED.Hue = ColorPaletteGUI.Hue;
 
         ColorPaletteGUI.ApplyHue();
         ColorPaletteGUI.ApplySaturation();
 
-        s_knobHueRect = new Rect(s_hueRect.x - 34 + s_hueRect.width, s_hueRect.y - 5 + s_hueRect.height * ColorPaletteGUI.Hue, 10, 10);
-        Debug.Log("Hue Pos : " + s_knobHueRect.x + " , " + s_knobHueRect.y);
+        BrushInfo.ED.BrushColor = ColorPaletteGUI.Color;
 
+        _knobHueRect = new Rect(_hueRect.x - 34 + _hueRect.width, _hueRect.y - 5 + _hueRect.height * ColorPaletteGUI.Hue, 10, 10);
+        BrushInfo.ED.HuePos = _knobHueRect.position;
+       
         Repaint();
         Event.current.Use();
     }
@@ -124,14 +121,20 @@ public class BrushWindow : EditorWindow
     public void DragSV()
     {
         Vector2 mousePos = Event.current.mousePosition;
-        float x = Mathf.Clamp(mousePos.x - s_satRect.x, -5, s_satRect.width - 5);
-        float y = Mathf.Clamp(mousePos.y - s_satRect.y, -5, s_satRect.height - 5);
-        ColorPaletteGUI.Saturation = x / s_satRect.width;
-        ColorPaletteGUI.Value = 1 - (y / s_satRect.height);
+        float x = Mathf.Clamp(mousePos.x - _svRect.x, -5, _svRect.width - 5);
+        float y = Mathf.Clamp(mousePos.y - _svRect.y, -5, _svRect.height - 5);
+        ColorPaletteGUI.Saturation = x / _svRect.width;
+        ColorPaletteGUI.Value = 1 - (y / _svRect.height);
+
+        BrushInfo.ED.SV = ColorPaletteGUI.Saturation;
+        BrushInfo.ED.Value = ColorPaletteGUI.Value;
+
         ColorPaletteGUI.ApplySaturation();
 
-        s_knobSVRect = new Rect(s_satRect.x + s_satRect.width * ColorPaletteGUI.Saturation, s_satRect.y + s_satRect.height * (1 - ColorPaletteGUI.Value), 10, 10);
-        Debug.Log("SV Pos : " + s_knobSVRect.x + " , " + s_knobSVRect.y);
+        BrushInfo.ED.BrushColor =ColorPaletteGUI.Color;
+
+        _knobSVRect = new Rect(_svRect.x + _svRect.width * ColorPaletteGUI.Saturation, _svRect.y + _svRect.height * (1 - ColorPaletteGUI.Value), 10, 10);
+        BrushInfo.ED.SVPos = _knobSVRect.position;
 
         Repaint();
         Event.current.Use();
@@ -139,11 +142,10 @@ public class BrushWindow : EditorWindow
 
     void OptionRefresh(int id , string name ,  ref float tabBoxPosX, Action act)
     {  
-        if (_tabBtnStyle == null)
-            _tabBtnStyle = EditorHelper.ToggleTabStyle();
+        GUIStyle tabBtnStyle = EditorHelper.ToggleTabStyle();
 
-        _showBrushTabs[id] = GUI.Toggle(new Rect(tabBoxPosX, 10, 40, 40), _showBrushTabs[id] , name, _tabBtnStyle);
-
+        _showBrushTabs[id] = GUI.Toggle(new Rect(tabBoxPosX, 10, 40, 40), _showBrushTabs[id] , name, tabBtnStyle);
+        EditorPrefs.SetBool("ShowBrushTab_" + id, _showBrushTabs[id]);
         _selectedTabCnt = _showBrushTabs.Count(x => x == true);
 
         if (_showBrushTabs[id])
@@ -152,28 +154,25 @@ public class BrushWindow : EditorWindow
         tabBoxPosX += 40f;
     }
 
-    public void OnGUI()
+    void DrawTab()
     {
         float tabBoxPosX = 0;
 
-        OptionRefresh((int)E_BrushOption.Type , "종류" , ref tabBoxPosX, ()=>
+        OptionRefresh((int)E_BrushOption.Type, "종류", ref tabBoxPosX, () =>
         {
             GUILayout.Space(60);
             BrushInfo.DrawGridBrush(position.x, new Vector2(60, 60));
         });
 
-        OptionRefresh((int)E_BrushOption.Setting, "설정", ref tabBoxPosX , ()=>
+        OptionRefresh((int)E_BrushOption.Setting, "설정", ref tabBoxPosX, () =>
         {
             float space = _showBrushTabs[(int)E_BrushOption.Type] ? GUILayoutUtility.GetLastRect().y + 20f : 60;
             GUILayout.Space(space);
             SetBrushScaleGUI();
-            SetBrushDistanceGUI();     
+            SetBrushDistanceGUI();
         });
 
-
-        //   CustomBrushEditor.ED.CubeColor = Utils.EditPropertyWithUndo("색상", CustomBrushEditor.ED.CubeColor, newColor => CustomBrushEditor.ED.CubeColor = newColor, (label, value) => EditorGUILayout.ColorField(label, value), CustomBrushEditor.ED);
-
-        OptionRefresh((int)E_BrushOption.Color, "색상", ref tabBoxPosX , () => 
+        OptionRefresh((int)E_BrushOption.Color, "색상", ref tabBoxPosX, () =>
         {
             float space = _selectedTabCnt > 1 ? GUILayoutUtility.GetLastRect().y + 20f : 60;
             GUILayout.Space(space);
@@ -183,7 +182,11 @@ public class BrushWindow : EditorWindow
         GUI.DrawTexture(new Rect(tabBoxPosX, 13, position.width * 5, 1), EditorGUIUtility.whiteTexture, ScaleMode.StretchToFill, false, 1f, new Color32(29, 29, 29, 255), 0, 0);
         GUI.DrawTexture(new Rect(tabBoxPosX, 14f, position.width * 5, 36), EditorGUIUtility.whiteTexture, ScaleMode.StretchToFill, false, 1f, new Color32(41, 41, 41, 255), 0, 0);
         GUI.DrawTexture(new Rect(tabBoxPosX, 50, position.width * 5, 1), EditorGUIUtility.whiteTexture, ScaleMode.StretchToFill, false, 1f, new Color32(29, 29, 29, 255), 0, 0);
+    }
 
+    public void OnGUI()
+    {
+        DrawTab();
     }
     private void SetBrushScaleGUI()
     {
@@ -211,7 +214,6 @@ public class BrushWindow : EditorWindow
 
         EditorGUILayout.EndHorizontal();
     }
-
     private void SetBrushDistanceGUI()
     {
         EditorGUILayout.BeginHorizontal(GUI.skin.box);
@@ -227,7 +229,10 @@ public class BrushWindow : EditorWindow
         EditorGUILayout.BeginHorizontal();
         EditorGUILayout.PrefixLabel("간격 : ");
         GUILayout.Space(-20);
-        _brushDist = EditorGUILayout.TextField(BrushInfo.ED.PlacementDistance.ToString("F2"), GUILayout.MaxWidth(170));
+
+        string distStr = BrushInfo.ED.PlacementDistance.ToString("F2");
+        distStr = EditorGUILayout.TextField(BrushInfo.ED.PlacementDistance.ToString("F2"), GUILayout.MaxWidth(170));
+      
         EditorGUILayout.EndHorizontal();
 
         GUILayout.Space(20);
@@ -245,24 +250,28 @@ public class BrushWindow : EditorWindow
         Rect paletteRect = EditorHelper.GetRect(60, 60);
         GUI.DrawTexture(paletteRect, Resources.Load<Texture2D>("Textures/Icon/ColorPaletteIcon"), ScaleMode.StretchToFill);
         paletteRect.x += 5; paletteRect.y += 5; paletteRect.width = 50; paletteRect.height = 50;
+
         GUI.DrawTexture(paletteRect, ColorPaletteGUI.ResultTex, ScaleMode.StretchToFill);
+
         GUILayout.Space(70);
 
-        s_satRect = EditorHelper.GetRect(200, 200);
+        _svRect = EditorHelper.GetRect(200, 200);
+        _knobSVRect = new Rect(_svRect.x + _svRect.width * ColorPaletteGUI.Saturation, _svRect.y + _svRect.height * (1 - ColorPaletteGUI.Value), 10, 10);
 
-        GUI.DrawTexture(s_satRect, ColorPaletteGUI.SatTex, ScaleMode.StretchToFill);
-        GUI.DrawTexture(s_knobSVRect, Resources.Load<Texture2D>("Textures/Icon/Knob_01"), ScaleMode.StretchToFill);
+        GUI.DrawTexture(_svRect, ColorPaletteGUI.SatTex, ScaleMode.StretchToFill);
+        GUI.DrawTexture(_knobSVRect, Resources.Load<Texture2D>("Textures/Icon/Knob_01"), ScaleMode.StretchToFill);
        
         GUILayout.Space(20);
 
-        s_hueRect = EditorHelper.GetRect(20, 200);
+        _hueRect = EditorHelper.GetRect(20, 200);
+        _knobHueRect = new Rect(_hueRect.x - 34 + _hueRect.width, _hueRect.y - 5 + _hueRect.height * ColorPaletteGUI.Hue, 10, 10);
 
-        GUI.DrawTexture(s_hueRect, ColorPaletteGUI.HueTex, ScaleMode.StretchToFill);
-        GUI.DrawTexture(s_knobHueRect, Resources.Load<Texture2D>("Textures/Icon/Knob_02"), ScaleMode.StretchToFill);
+        GUI.DrawTexture(_hueRect, ColorPaletteGUI.HueTex, ScaleMode.StretchToFill);
+        GUI.DrawTexture(_knobHueRect, Resources.Load<Texture2D>("Textures/Icon/Knob_02"), ScaleMode.StretchToFill);
 
         GUILayout.FlexibleSpace();
         EditorGUILayout.EndHorizontal();
 
-        _update?.Invoke();
+        _actPaletteUpdate?.Invoke();
     }
 }

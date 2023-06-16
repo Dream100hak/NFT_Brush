@@ -1,7 +1,10 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using static UnityEditor.Progress;
 
+
+[Serializable]
 [CreateAssetMenu(fileName = "BrushInfoData", menuName = "BrushInfoData/Data", order = 1)]
 public class BrushInfoData : ScriptableObject
 {
@@ -10,7 +13,10 @@ public class BrushInfoData : ScriptableObject
 
     public float BrushSize = 0.5f;
     public float PlacementDistance  = 1.0f;
+
     public Color BrushColor = Color.white;
+    public float Hue, SV , Value;
+    public Vector2 HuePos, SVPos;
 
     public bool RotatorEnabled = false;
     public bool MoverEnabled = false;

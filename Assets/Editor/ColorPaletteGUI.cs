@@ -7,7 +7,6 @@ public class ColorPaletteGUI : MonoBehaviour
 { 
     private static Color _color = Color.red;
     public static Color Color { get { return _color; } set { Init(value); } }
-    private static Action _update;
 
     public static Action ApplySaturation;
     public static Action ApplyHue;
@@ -130,7 +129,6 @@ public class ColorPaletteGUI : MonoBehaviour
 
         HueTex = interpolatedHueTex;
         SatTex = satTex;
-
     }
 
  
