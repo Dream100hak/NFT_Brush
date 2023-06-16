@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
@@ -87,8 +88,25 @@ public class Layer : MonoBehaviour
         }
     }
 
-    private void Awake()
+    [SerializeField]
+    private int _prevSiblingIndex = -1;
+    public int PrevSiblingIndex
     {
-        _hasChanged = true;
+        get => _prevSiblingIndex;
+        set
+        {
+            if (_prevSiblingIndex != value)
+            {
+                _prevSiblingIndex = value;
+            }
+        }
+    }
+
+    public void Initialize(int newId , string newName)
+    {
+        Id = newId;
+        CreationTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        Name = newName;
+        HasChanged = true;
     }
 }

@@ -22,3 +22,9 @@ public enum E_BrushType
 {
     One, Box , Capsule
 }
+
+public enum E_CreateLayer
+{
+    New,
+    Clone,
+}

@@ -7,27 +7,43 @@ using UnityEngine;
 
 public class Utils
 {
-    public static Stack<Action> _undoStack = new Stack<Action>();
-    public static Stack<Action> _redoStack = new Stack<Action>();
-    public static Stack<Action> UndoStack { get => _undoStack; }
+    public static Stack<(string eventName, Action action)> _undoStack = new Stack<(string , Action)>();
+    public static Stack<(string eventName, Action action)> _redoStack = new Stack<(string, Action)>();
 
+    public static void ClearUndoRedo()
+    {
+        _undoStack.Clear();
+        _redoStack.Clear();
+    }
     public static void UndoExecute()
     {
         if (_undoStack.Count > 0)
         {
-            Action undoAction = _undoStack.Pop();
-            _redoStack.Push(undoAction); 
+            (string eventName, Action undoAction) = _undoStack.Pop();
+            _redoStack.Push((eventName, undoAction));
             undoAction.Invoke();
+
+            Debug.Log("<color=red>Undo Execute :</color> " + eventName);
         }
     }
-    public static void RedoExeCute()
+
+    public static void RedoExecute()
     {
         if (_redoStack.Count > 0)
         {
-            Action redoAction = _redoStack.Pop();
-            _undoStack.Push(redoAction);
-            redoAction.Invoke(); 
+            (string eventName, Action redoAction) = _redoStack.Pop();
+            _undoStack.Push((eventName, redoAction ));
+            redoAction.Invoke();
+
+            Debug.Log("Redo : " + eventName);
         }
+    }
+
+    public static void AddUndo(string eventName, Action action)
+    {
+        Debug.Log("<color=orange>Undo Add :</color> " + eventName);
+        _undoStack.Push((eventName, action));
+        _redoStack.Clear();
     }
 
 #if UNITY_EDITOR

@@ -168,15 +168,15 @@ public class BrushWindow : EditorWindow
         {
             float space = _showBrushTabs[(int)E_BrushOption.Type] ? GUILayoutUtility.GetLastRect().y + 20f : 60;
             GUILayout.Space(space);
-            SetBrushScaleGUI();
-            SetBrushDistanceGUI();
+            DrawBrushScaleGUI();
+            DrawBrushDistanceGUI();
         });
 
         OptionRefresh((int)E_BrushOption.Color, "»ö»ó", ref tabBoxPosX, () =>
         {
             float space = _selectedTabCnt > 1 ? GUILayoutUtility.GetLastRect().y + 20f : 60;
             GUILayout.Space(space);
-            SetBrushColorGUI();
+            DrawBrushColorGUI();
         });
 
         GUI.DrawTexture(new Rect(tabBoxPosX, 13, position.width * 5, 1), EditorGUIUtility.whiteTexture, ScaleMode.StretchToFill, false, 1f, new Color32(29, 29, 29, 255), 0, 0);
@@ -188,7 +188,7 @@ public class BrushWindow : EditorWindow
     {
         DrawTab();
     }
-    private void SetBrushScaleGUI()
+    private void DrawBrushScaleGUI()
     {
         EditorGUILayout.BeginHorizontal(GUI.skin.box);
 
@@ -214,7 +214,7 @@ public class BrushWindow : EditorWindow
 
         EditorGUILayout.EndHorizontal();
     }
-    private void SetBrushDistanceGUI()
+    private void DrawBrushDistanceGUI()
     {
         EditorGUILayout.BeginHorizontal(GUI.skin.box);
 
@@ -243,7 +243,7 @@ public class BrushWindow : EditorWindow
 
         EditorGUILayout.EndHorizontal();
     }
-    private void SetBrushColorGUI()
+    private void DrawBrushColorGUI()
     {
         EditorGUILayout.BeginHorizontal(GUI.skin.box);
 

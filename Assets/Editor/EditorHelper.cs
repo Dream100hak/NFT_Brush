@@ -12,6 +12,9 @@ using UnityEditor;
 
 public class EditorHelper 
 {
+    public static Color Gray01 = new Color32(100, 100, 100, 255);
+    public static Color Sky = new Color32(51, 243, 255, 255);
+
     public static void DrawGridBrushItems(int space, int itemCnt, Action<int> onDrawer)
     {
         GUILayout.BeginHorizontal();
