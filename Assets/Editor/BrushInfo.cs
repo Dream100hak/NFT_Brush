@@ -9,8 +9,6 @@ public class BrushInfo
     private static BrushInfoData s_editorData => GetBrushData();
     public static BrushInfoData ED { get => s_editorData; }
 
-    private static bool s_isPlacing;
-    public static bool IsPlacing { get => s_isPlacing; }
     public static GameObject CurrentBrush { get => ED.Brushes[ED.GetSelectedBrushId()].TargetObj ; }
     private static Transform s_parent => GetBrushParent();
     public static Transform BrushParent { get => s_parent; }

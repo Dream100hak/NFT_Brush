@@ -1,12 +1,9 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using System;
 using System.Linq;
 using Unity.VisualScripting;
-using System.IO;
-using static UnityEditor.Experimental.GraphView.GraphView;
 
 public class LayerWindow : EditorWindow
 {
@@ -20,28 +17,23 @@ public class LayerWindow : EditorWindow
     private DateTime _dragStartTime;
 
     [MenuItem("Photoshop/Layer")]
-    public static void ShowWindow()
-    {
-        GetWindow<LayerWindow>("Layer");
-    }
+    public static void ShowWindow() => GetWindow<LayerWindow>("Layer");
+
 
     private void OnEnable()
     {
         Undo.undoRedoPerformed += OnUndoRedoPerformed;
         LayerInfo.ED.SelectedLayerIds.Clear();
-      //  Debug.Log("Subscribed to Undo.undoRedoPerformed");
+       
 
     }
     private void OnDisable()
     {
         Undo.undoRedoPerformed -= OnUndoRedoPerformed;
-       // Debug.Log("Unsubscribed from Undo.undoRedoPerformed");
     }
 
     private void OnUndoRedoPerformed()
     {
-    //    Debug.Log("OnUndoRedoPerformed called");
-
         Utils.UndoExecute();
         LayerInfo.SetLayerHasChanged();
         Repaint();
@@ -69,11 +61,11 @@ public class LayerWindow : EditorWindow
         int canvasLayer = LayerMask.NameToLayer("Canvas");
         tempCamera.cullingMask = 1 << canvasLayer;
 
-        Transform cubeParent = BrushInfo.GetBrushParent();
+        Transform brushParent = BrushInfo.GetBrushParent();
         List<bool> layerStates = new List<bool>();
-        for (int i = 0; i < cubeParent.childCount; i++)
+        for (int i = 0; i < brushParent.childCount; i++)
         {
-            Transform childLayer = cubeParent.GetChild(i);
+            Transform childLayer = brushParent.GetChild(i);
             layerStates.Add(childLayer.gameObject.activeSelf);
             if (childLayer != layer.transform)
             {
@@ -104,9 +96,9 @@ public class LayerWindow : EditorWindow
         DestroyImmediate(renderTexture);
         DestroyImmediate(gridQuad);
 
-        for (int i = 0; i < cubeParent.childCount; i++)
+        for (int i = 0; i < brushParent.childCount; i++)
         {
-            Transform childLayer = cubeParent.GetChild(i);
+            Transform childLayer = brushParent.GetChild(i);
             childLayer.gameObject.SetActive(layerStates[i]);
         }
 
@@ -136,18 +128,18 @@ public class LayerWindow : EditorWindow
         GUILayout.BeginHorizontal(GUI.skin.box);
         GUILayout.FlexibleSpace();
         CreateNewLayer();
-        DrawCopyButtonListGUI(); // 레이어 복제 버튼 추가
+        DrawCopyButtonListGUI();
         DeleteSelectedLayer();
   
         GUILayout.EndHorizontal();
 
     }
     //레이어 리스트 드로잉
+    Vector2 _scrollPos = Vector2.zero;
     private void DrawLayerListGUI()
     {
         _clickedInsideLayer = false;
-        Vector2 scrollPos = Vector2.zero;
-        GUILayout.BeginScrollView(scrollPos, false, true);
+        _scrollPos =  GUILayout.BeginScrollView(_scrollPos, false, true);
 
         var sortedLayerList = LayerInfo.GetSortedCreationTimeLayerList();
 
@@ -175,7 +167,7 @@ public class LayerWindow : EditorWindow
         if(_clickedInsideLayer == false)
          ClearSelectedLayers();
 
-        InsertDraggedLayer();
+        RegisterDraggedLayer();
 
         LayerInfo.DeleteLayerIds();
         LayerInfo.RestoreLayerIds();
@@ -234,7 +226,6 @@ public class LayerWindow : EditorWindow
                 DraggedMouseUp(id);
                 break;
         }
-
         DrawDraggedSkyLineGUI(layer);
     }
 
@@ -247,15 +238,17 @@ public class LayerWindow : EditorWindow
             _clickedInsideLayer = true;
 
             if (Event.current.shift)
-                InsertShiftLayerId(id);
+                InpuLayerIdByShift(id);
+      
+            else if (Event.current.control)
+                InpuLayerIdByControl(id);        
             else
-                InsertControlLayerId(id);
-
+                InpuLayerIdByLeftClick(id);
+         
             LayerInfo.SelectLayerObjects();
             Event.current.Use();
         }
     }
-
     private void DraggedMouseDrag(Layer layer, Rect newLayerRect)
     {
         if (IsContainLayerRect(newLayerRect) && Event.current.button == 0)
@@ -277,61 +270,32 @@ public class LayerWindow : EditorWindow
 
         if(_insertLayer.Value != null)
         {
+            Utils.UndoPop();
             ApplyDraggedLayer();
         }
-        else
-        {
-            if(LayerInfo.ED.SelectedLayerIds.Count > 0)
-            {
-                Utils.AddUndo("Add layerId by click", () =>
-                {
-                    if (LayerInfo.ED.SelectedLayerIds.Contains(id))
-                        LayerInfo.ED.SelectedLayerIds.Remove(id);
-                });
-            }
-            else
-            {
-                List<int> prevSelectedLayerIds = new List<int>(LayerInfo.ED.SelectedLayerIds);
-
-                Utils.AddUndo("Clear selected layers", () =>
-                {
-                    foreach (int prevId in prevSelectedLayerIds)
-                    {
-                        if (!LayerInfo.ED.SelectedLayerIds.Contains(prevId))
-                            LayerInfo.ED.SelectedLayerIds.Add(prevId);
-                    }
-                });
-            }
-        }
-         
         Event.current.Use();
     }
-    private void InsertControlLayerId(int id)
+    private void InpuLayerIdByControl(int id)
     {
-        if(Event.current.control || Event.current.command)
+        Undo.RecordObject(LayerInfo.ED, "[Key Code Ctrl] Layer Selection");
+
+        if (LayerInfo.ED.SelectedLayerIds.Contains(id))
         {
-            Undo.RecordObject(LayerInfo.ED, "Control Layer Selection");
-
-            if (LayerInfo.ED.SelectedLayerIds.Contains(id))
-                LayerInfo.ED.SelectedLayerIds.Remove(id);
-            else
-                LayerInfo.ED.SelectedLayerIds.Add(id);
-
-            _multiSelected = true;
+            LayerInfo.ED.SelectedLayerIds.Remove(id);
+            Utils.AddUndo("[Key Code Ctrl] Remove Selection Layer", () => { if (LayerInfo.ED.SelectedLayerIds.Contains(id) == false) LayerInfo.ED.SelectedLayerIds.Add(id); });
         }
         else
         {
-            Undo.RecordObject(LayerInfo.ED,  "No Control Layer Selection");
-
-            LayerInfo.ED.SelectedLayerIds.Clear();
-            LayerInfo.ED.SelectedLayerIds.Add(id);   
+            LayerInfo.ED.SelectedLayerIds.Add(id);
+            Utils.AddUndo("[Key Code Ctrl] Add Selection Layer", () => { if (LayerInfo.ED.SelectedLayerIds.Contains(id)) LayerInfo.ED.SelectedLayerIds.Remove(id); });
         }
+        _multiSelected = true;
     }
-    private void InsertShiftLayerId(int id)
+    private void InpuLayerIdByShift(int id)
     {
         List<int> prevSelectedLayerIds = new List<int>(LayerInfo.ED.SelectedLayerIds);
 
-        Undo.RecordObject(LayerInfo.ED, "Shift Layer Selection");
+        Undo.RecordObject(LayerInfo.ED, "[Key Code Shift] Add Selection Layer");
 
         if (LayerInfo.ED.SelectedLayerIds.Any())
         {
@@ -346,7 +310,7 @@ public class LayerWindow : EditorWindow
             for (int i = startIndex; i <= endIndex; i++)
                 LayerInfo.ED.SelectedLayerIds.Add(layerDatas[i].Id);
 
-            Utils.AddUndo("Add layerId by shift key", () =>
+            Utils.AddUndo("[Key Code Shift] Add Selection Layer", () =>
             {
                 for (int i = startIndex; i <= endIndex; i++)
                 {
@@ -361,12 +325,28 @@ public class LayerWindow : EditorWindow
                 }
             });
         }
-        else
-        {
-            LayerInfo.ED.SelectedLayerIds.Add(id);
-        } 
+
+        _multiSelected = true;
     }
-    private void InsertDraggedLayer()
+    public void InpuLayerIdByLeftClick(int id)
+    {
+        List<int> prevSelectedLayerIds = new List<int>(LayerInfo.ED.SelectedLayerIds);
+
+        Undo.RecordObject(LayerInfo.ED, "[Left Click] Add Selection Layer");
+        LayerInfo.ED.SelectedLayerIds.Clear();
+        LayerInfo.ED.SelectedLayerIds.Add(id);
+
+        Utils.AddUndo("[Left Click] Add Selection Layer", () =>
+        {
+            if (LayerInfo.ED.SelectedLayerIds.Contains(id))
+                LayerInfo.ED.SelectedLayerIds.Remove(id);
+
+            foreach (var prevId in prevSelectedLayerIds)
+                LayerInfo.ED.SelectedLayerIds.Add(prevId);
+        });
+    }
+
+    private void RegisterDraggedLayer()
     {
         List<Layer> layerDatas = LayerInfo.GetLayerList();
 
@@ -402,7 +382,7 @@ public class LayerWindow : EditorWindow
 
         int bIndex = B.transform.GetSiblingIndex();
         long bTime = B.CreationTimestamp;
-  
+
         int AIndex = A.transform.GetSiblingIndex();
 
         // Swap
@@ -420,7 +400,7 @@ public class LayerWindow : EditorWindow
         _insertLayer = new KeyValuePair<int, Layer>();
         _draggingLayer = new KeyValuePair<int, Layer>();
 
-        Utils.AddUndo("Apply draggedLayer" , () =>
+        Utils.AddUndo("Apply draggedLayer", () =>
         {
             var layers = LayerInfo.GetDictinaryLayers();
 
@@ -448,7 +428,22 @@ public class LayerWindow : EditorWindow
     {
         if (Event.current.type == EventType.MouseDown)
         {
+            List<int> prevSelectedLayerIds = new List<int>(LayerInfo.ED.SelectedLayerIds);
+
+            Selection.activeGameObject = null;
             LayerInfo.ED.SelectedLayerIds.Clear();
+
+            Utils.AddUndo("Clear selected layers", () =>
+            {
+                foreach (int prevId in prevSelectedLayerIds)
+                {
+                    if (!LayerInfo.ED.SelectedLayerIds.Contains(prevId))
+                    {
+                        LayerInfo.ED.SelectedLayerIds.Add(prevId);
+                        LayerInfo.SelectLayerObjects();
+                    }
+                }
+            });
         }
     }
     private void DrawCopyButtonListGUI()

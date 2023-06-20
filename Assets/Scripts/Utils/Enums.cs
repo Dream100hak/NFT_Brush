@@ -28,3 +28,17 @@ public enum E_CreateLayer
     New,
     Clone,
 }
+
+public enum E_KeyInput
+{
+    None,
+    Ctrl,
+    Shift,
+}
+
+public enum E_DRAWING
+{
+    Select,
+    Draw,
+    Erase,
+}

@@ -7,8 +7,14 @@ using UnityEngine;
 
 public class Utils
 {
-    public static Stack<(string eventName, Action action)> _undoStack = new Stack<(string , Action)>();
-    public static Stack<(string eventName, Action action)> _redoStack = new Stack<(string, Action)>();
+    private static Stack<(string eventName, Action action)> _undoStack = new Stack<(string , Action)>();
+    private static Stack<(string eventName, Action action)> _redoStack = new Stack<(string, Action)>();
+
+    public static void UndoPop()
+    {
+        (string eventName, Action undoAction) = _undoStack.Pop();
+        Debug.Log("<color=red>Pop :</color> " + eventName);
+    }
 
     public static void ClearUndoRedo()
     {

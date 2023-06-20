@@ -1,34 +1,21 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Xml;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public enum E_DRAWING
-{
-    SELECT,
-    DRAW,
-    ERASE,
-}
 
 public class DrawingWindow : EditorWindow
 {
-    private Vector2 _canvasSize = new Vector2(1920, 1080); // 기본 캔버스 사이즈 설정
+    private Vector2 _canvasSize = new Vector2(1920 / 2.5f , 1080 / 2.5f); // 기본 캔버스 사이즈 설정
 
     float _areaX = 10;
     float _areaY = 50;
 
-    private Texture2D _gridTexture;
-
-    private Camera _captureCamera;
+    private Camera _captureCam;
     private RenderTexture _renderTexture;
 
     private Vector3 _initialMousePos;
     private Vector3 _lastPlacedPos;
-
-    private bool _bStart;
 
     [MenuItem("Photoshop/Drawing")]
     public static void ShowWindow()
@@ -38,14 +25,7 @@ public class DrawingWindow : EditorWindow
 
     private void OnEnable()
     {
-        _gridTexture = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Resources/Textures/Grid.png");
-
-        if(_bStart == false)
-        {
-            SetResolution(1920, 1080);
-            _bStart = true;
-        }
-        
+        InitializeCaptureCamera();
         EditorSceneManager.sceneOpened += OnSceneOpened;
         EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
 
@@ -55,198 +35,136 @@ public class DrawingWindow : EditorWindow
         EditorSceneManager.sceneOpened -= OnSceneOpened;
         EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
     }
-
-    private void OnSceneOpened(Scene scene, OpenSceneMode mode)
-    {
-        InitializeCaptureCamera();
-    }
-    private void OnPlayModeStateChanged(PlayModeStateChange state)
-    {
-        InitializeCaptureCamera();
-    }
-
-    private void SetResolution(int width, int height)
-    {
-        int index = CustomGameViewSize.FindSize(GameViewSizeGroupType.Standalone, width, height);
-
-        if (index == -1)
-            return;
-
-        CustomGameViewSize.SetSize(index);
-
-        float aspectRatio = (float)width / height;
-
-        if (aspectRatio == 1)
-        {
-            _canvasSize.x = width * 0.3f;
-            _canvasSize.y = height * 0.3f;
-        }
-        else
-        {
-            _canvasSize.x = width * 0.4f;
-            _canvasSize.y = height * 0.4f;
-        }
-
-        InitializeCaptureCamera();
-    }
+    private void OnSceneOpened(Scene scene, OpenSceneMode mode) =>  InitializeCaptureCamera();
+    private void OnPlayModeStateChanged(PlayModeStateChange state) => InitializeCaptureCamera();
 
     private void InitializeCaptureCamera()
     {
         GameObject cam = GameObject.Find("DrawCamera");
-        if (cam == null)
-            _captureCamera = new GameObject("DrawCamera").AddComponent<Camera>();
-        else
-            _captureCamera = cam.GetComponent<Camera>();
+        _captureCam = (cam == null) ? new GameObject(name).AddComponent<Camera>() : _captureCam = cam.GetComponent<Camera>();
 
-        _captureCamera.transform.position = Camera.main.transform.position;
-        _captureCamera.transform.rotation = Camera.main.transform.rotation;
-        _captureCamera.fieldOfView = Camera.main.fieldOfView;
-        _captureCamera.nearClipPlane = Camera.main.nearClipPlane;
-        _captureCamera.farClipPlane = Camera.main.farClipPlane;
-        _captureCamera.orthographic = true;
-        _captureCamera.orthographicSize = Camera.main.orthographicSize;
-        _captureCamera.clearFlags = CameraClearFlags.SolidColor;
-        _captureCamera.backgroundColor = Color.clear;
-        _captureCamera.cullingMask = Camera.main.cullingMask;
-        _captureCamera.depth = Camera.main.depth;
+        _captureCam.transform.position = Camera.main.transform.position;
+        _captureCam.transform.rotation = Camera.main.transform.rotation;
+        _captureCam.fieldOfView = Camera.main.fieldOfView;
+        _captureCam.nearClipPlane = Camera.main.nearClipPlane;
+        _captureCam.farClipPlane = Camera.main.farClipPlane;
+        _captureCam.orthographic = true;
+        _captureCam.orthographicSize = Camera.main.orthographicSize;
+        _captureCam.clearFlags = CameraClearFlags.SolidColor;
+        _captureCam.backgroundColor = Color.clear;
+        _captureCam.cullingMask = Camera.main.cullingMask;
+        _captureCam.depth = Camera.main.depth;
 
         float aspectRatio = _canvasSize.x / _canvasSize.y;
-
-        if (Camera.main.aspect != aspectRatio)
-            _captureCamera.aspect = aspectRatio;
-
-        else
-            _captureCamera.aspect = Camera.main.aspect;
+        _captureCam.aspect = (Camera.main.aspect != aspectRatio) ? aspectRatio : Camera.main.aspect;
 
         _renderTexture = new RenderTexture((int)_canvasSize.x, (int)_canvasSize.y, 24, RenderTextureFormat.ARGB32);
         _renderTexture.Create();
 
-        _captureCamera.targetTexture = _renderTexture;
+        _captureCam.targetTexture = _renderTexture;
+
     }
+
+
     private void OnGUI()
     {
-
-
-        DrawResolutionBox();
-
         Rect textureRect = GetTextureRect();
+        DrawGridTextureGUI();
 
-        if (_gridTexture != null)
-            DrawGridTexture();
+    
+        GUI.DrawTexture(textureRect, _renderTexture, ScaleMode.ScaleToFit);
 
-        if (_renderTexture != null)
-            DrawRenderTexture(textureRect);
-
-        float edgeThickness = 2f;
-        DrawBorder(edgeThickness, Color.black);
-
+        DrawBorderGUI(Color.black);
         Repaint();
 
-        if (BrushInfo.IsPlacing && BrushInfo.CurrentBrush != null)
-        {
-            Event e = Event.current;
-            Vector2 mousePos = e.mousePosition;
-
-            Vector2 uvCoord = new Vector2((mousePos.x - textureRect.x) / textureRect.width, (mousePos.y - textureRect.y) / textureRect.height);
-
-            Ray ray = _captureCamera.ViewportPointToRay(new Vector3(uvCoord.x, 1 - uvCoord.y, 0));
-            RaycastHit hitInfo;
-
-            if (Physics.Raycast(ray, out hitInfo, Mathf.Infinity))
-            {
-                bool shiftPressed = e.shift;
-                if (_initialMousePos != Vector3.zero)
-                {
-                    Vector3 direction = hitInfo.point - _initialMousePos;
-                    if (shiftPressed && Mathf.Abs(direction.x) > Mathf.Abs(direction.y) && Mathf.Abs(direction.x) > Mathf.Abs(direction.z))
-                        hitInfo.point = new Vector3(hitInfo.point.x, _initialMousePos.y, _initialMousePos.z);
-
-                    else if (shiftPressed && Mathf.Abs(direction.y) > Mathf.Abs(direction.z))
-                        hitInfo.point = new Vector3(_initialMousePos.x, hitInfo.point.y, _initialMousePos.z);
-
-                    else if (shiftPressed)
-                        hitInfo.point = new Vector3(_initialMousePos.x, _initialMousePos.y, hitInfo.point.z);
-                }
-
-                if (e.type == EventType.MouseDown && e.button == 0)
-                {
-                    if (_initialMousePos == Vector3.zero)
-                    {
-                        _initialMousePos = hitInfo.point;
-                        BrushInfo.PaintBrush(Utils.SetZVectorZero(hitInfo.point));
-                        e.Use();
-                    }
-                    else if (!shiftPressed)
-                    {
-                        BrushInfo.PaintBrush(Utils.SetZVectorZero(hitInfo.point));
-                        _initialMousePos = hitInfo.point;
-                        e.Use();
-                    }
-                    Repaint();
-                }
-                else if (e.type == EventType.MouseUp && e.button == 0)
-                {
-                    if (shiftPressed && _initialMousePos != Vector3.zero)
-                    {
-                        Vector3 direction = (hitInfo.point - _initialMousePos).normalized;
-                        float distanceBetweenCubes = Vector3.Distance(hitInfo.point, _initialMousePos);
-                        int numberOfCubes = Mathf.RoundToInt(distanceBetweenCubes / BrushInfo.ED.PlacementDistance);
-
-                        Debug.Log("Num Of Cube : " + (numberOfCubes + 1));
-
-                        for (int i = 1; i <= numberOfCubes; i++)
-                        {
-                            Vector3 cubePosition = _initialMousePos + direction * BrushInfo.ED.PlacementDistance * i;
-                            BrushInfo.PaintBrush(Utils.SetZVectorZero(cubePosition));
-                        }
-                    }
-                    LayerInfo.CurrentLayer = null;
-                    _initialMousePos = Vector3.zero;
-                }
-                else if (e.type == EventType.MouseDrag && e.button == 0 && !shiftPressed)
-                {
-                    if (Vector3.Distance(_lastPlacedPos, hitInfo.point) >= BrushInfo.ED.PlacementDistance)
-                    {
-                        BrushInfo.PaintBrush(Utils.SetZVectorZero(hitInfo.point));
-                        _lastPlacedPos = hitInfo.point;
-                    }
-                    e.Use();
-
-                    Repaint();
-                }
-
-                if (e.type == EventType.MouseDrag && e.button == 1)
-                {
-                    BrushInfo.RemoveBrush(hitInfo);
-                }
-                else if (e.type == EventType.MouseDown && e.button == 1)
-                {
-                    BrushInfo.RemoveBrush(hitInfo);
-                }
-            }
-        }
+        if ( BrushInfo.CurrentBrush != null)
+            DrawPaintBrushGUI(textureRect);
+    
 
         GUILayout.Box(EditorGUIUtility.IconContent("_Popup@2x"));
     }
 
-    private void DrawResolutionBox()
+    private void DrawPaintBrushGUI(Rect textureRect)
     {
-        float buttonWidth = 100f;
-        float buttonHeight = 30f;
+        Event e = Event.current;
+        Vector2 mousePos = e.mousePosition;
+        Vector2 uvCoord = new Vector2((mousePos.x - textureRect.x) / textureRect.width, (mousePos.y - textureRect.y) / textureRect.height);
 
-        GUILayout.BeginArea(new Rect(10, 10, position.width, buttonHeight));
-        GUILayout.BeginHorizontal();
+        Ray ray = _captureCam.ViewportPointToRay(new Vector3(uvCoord.x, 1 - uvCoord.y, 0));
+        RaycastHit hitInfo;
 
-        if (GUILayout.Button("1920 x 1080", GUILayout.Width(buttonWidth), GUILayout.Height(buttonHeight)))
-            SetResolution(1920, 1080);
+        if (Physics.Raycast(ray, out hitInfo, Mathf.Infinity))
+        {
+            if (_initialMousePos != Vector3.zero)
+            {
+                Vector3 direction = hitInfo.point - _initialMousePos;
+                if (e.shift && Mathf.Abs(direction.x) > Mathf.Abs(direction.y) && Mathf.Abs(direction.x) > Mathf.Abs(direction.z))
+                    hitInfo.point = new Vector3(hitInfo.point.x, _initialMousePos.y, _initialMousePos.z);
 
+                else if (e.shift && Mathf.Abs(direction.y) > Mathf.Abs(direction.z))
+                    hitInfo.point = new Vector3(_initialMousePos.x, hitInfo.point.y, _initialMousePos.z);
 
-        if (GUILayout.Button("2048 x 2048", GUILayout.Width(buttonWidth), GUILayout.Height(buttonHeight)))
-            SetResolution(2048, 2048);
+                else if (e.shift)
+                    hitInfo.point = new Vector3(_initialMousePos.x, _initialMousePos.y, hitInfo.point.z);
+            }
 
+            if (e.type == EventType.MouseDown && e.button == 0)
+            {
+                if (_initialMousePos == Vector3.zero)
+                {
+                    _initialMousePos = hitInfo.point;
+                    BrushInfo.PaintBrush(Utils.SetZVectorZero(hitInfo.point));
+                    e.Use();
+                }
+                else if (e.shift == false)
+                {
+                    BrushInfo.PaintBrush(Utils.SetZVectorZero(hitInfo.point));
+                    _initialMousePos = hitInfo.point;
+                    e.Use();
+                }
+                Repaint();
+            }
 
-        GUILayout.EndHorizontal();
-        GUILayout.EndArea();
+            else if (e.type == EventType.MouseUp && e.button == 0)
+            {
+                if (e.shift && _initialMousePos != Vector3.zero)
+                {
+                    Vector3 direction = (hitInfo.point - _initialMousePos).normalized;
+                    float distanceBetweenCubes = Vector3.Distance(hitInfo.point, _initialMousePos);
+                    int numberOfCubes = Mathf.RoundToInt(distanceBetweenCubes / BrushInfo.ED.PlacementDistance);
+
+                    Debug.Log("Num Of Cube : " + (numberOfCubes + 1));
+
+                    for (int i = 1; i <= numberOfCubes; i++)
+                    {
+                        Vector3 cubePosition = _initialMousePos + direction * BrushInfo.ED.PlacementDistance * i;
+                        BrushInfo.PaintBrush(Utils.SetZVectorZero(cubePosition));
+                    }
+                }
+                LayerInfo.CurrentLayer = null;
+                _initialMousePos = Vector3.zero;
+            }
+            else if (e.type == EventType.MouseDrag && e.button == 0 && e.shift == false)
+            {
+                if (Vector3.Distance(_lastPlacedPos, hitInfo.point) >= BrushInfo.ED.PlacementDistance)
+                {
+                    BrushInfo.PaintBrush(Utils.SetZVectorZero(hitInfo.point));
+                    _lastPlacedPos = hitInfo.point;
+                }
+                e.Use();
+
+                Repaint();
+            }
+            else if (e.type == EventType.ScrollWheel)
+            {
+                float scrollDelta = e.delta.y;
+                float newOrthographicSize = Mathf.Min(_captureCam.orthographicSize + scrollDelta , 50);
+
+                _captureCam.orthographicSize = Mathf.Max(newOrthographicSize, Camera.main.orthographicSize);
+
+                e.Use(); 
+            }
+        }
     }
 
     private Rect GetTextureRect()
@@ -261,20 +179,19 @@ public class DrawingWindow : EditorWindow
         else
             scaledHeight = _canvasSize.x / aspectRatio;
 
-        float renderWidth = scaledWidth * 0.8f;
-        //float renderWidth = scaledWidth * 1f;
-        float renderHeight = scaledHeight * 0.8f;
-        //float renderHeight = scaledHeight * 1f;
-
+        float renderWidth = scaledWidth;
+        float renderHeight = scaledHeight;
         float offsetX = (scaledWidth - renderWidth) / 2f;
         float offsetY = (scaledHeight - renderHeight) / 2f;
 
         return new Rect(_areaX + offsetX, _areaY + offsetY, renderWidth, renderHeight);
     }
-    private void DrawGridTexture()
+    private void DrawGridTextureGUI()
     {
-        float tileWidth = _gridTexture.width;
-        float tileHeight = _gridTexture.height;
+        Texture2D gridTex =  Resources.Load<Texture2D>("Textures/Grid");
+
+        float tileWidth = gridTex.width;
+        float tileHeight = gridTex.height;
 
         int columns = Mathf.CeilToInt(_canvasSize.x / tileWidth);
         int rows = Mathf.CeilToInt(_canvasSize.y / tileHeight);
@@ -292,26 +209,19 @@ public class DrawingWindow : EditorWindow
                     if (clippedWidth > 0 && clippedHeight > 0)
                     {
                         Rect clippedRect = new Rect(_areaX + tileRect.x, _areaY + tileRect.y, clippedWidth, clippedHeight);
-                        GUI.DrawTexture(clippedRect, _gridTexture);
+                        GUI.DrawTexture(clippedRect, gridTex);
                     }
                 }
             }
         }
     }
-
-    private void DrawRenderTexture(Rect rect)
+    private void DrawBorderGUI( Color color)
     {
-        GUI.DrawTexture(rect, _renderTexture, ScaleMode.ScaleToFit);
-    }
+        float thickness = 2f;
+        float cameraAreaWidth = _canvasSize.x;
+        float cameraAreaHeight = _canvasSize.y;
 
-    private void DrawBorder(float thickness, Color color)
-    {
-        float cameraAreaWidth = _canvasSize.x * 0.8f;
-        float cameraAreaHeight = _canvasSize.y * 0.8f;
-
-        float cameraAreaX = (_canvasSize.x - cameraAreaWidth) / 2f;
-        float cameraAreaY = (_canvasSize.y - cameraAreaHeight) / 2f;
-        Rect rect = new Rect(_areaX + cameraAreaX, _areaY + cameraAreaY, cameraAreaWidth, cameraAreaHeight);
+        Rect rect = new Rect(_areaX, _areaY, cameraAreaWidth, cameraAreaHeight);
 
         Color originalColor = GUI.color;
         GUI.color = color;

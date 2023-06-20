@@ -10,8 +10,8 @@ using UnityEngine.SceneManagement;
 
 public class LayerInfo
 {
-    private static LayerInfoData s_editorData => GetLayerEditorData();
-    public static LayerInfoData ED { get => s_editorData; }
+    private static LayerInfoData s_infoData => GetLayerEditorData();
+    public static LayerInfoData ED { get => s_infoData; }
 
     private static int s_generateId;
     public static int GenerateId { get => s_generateId; set => s_generateId = value; }
@@ -26,6 +26,7 @@ public class LayerInfo
 
     private static Transform s_currentLayer;
     public static Transform CurrentLayer { get => s_currentLayer; set => s_currentLayer = value; }
+
 
     public static LayerInfoData GetLayerEditorData() { return Resources.Load<LayerInfoData>("Data/LayerInfoData"); }
 
@@ -68,7 +69,6 @@ public class LayerInfo
             }
         }
     }
-
     public static void GenerateFirstLayerId()
     {
         while (true)
