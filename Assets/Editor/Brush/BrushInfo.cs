@@ -2,7 +2,6 @@ using System.Linq;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
-using static UnityEditor.Progress;
 
 public class BrushInfo
 {
@@ -16,7 +15,7 @@ public class BrushInfo
 
     public static Transform GetBrushParent()
     { 
-        var parent = UnityEngine.Object.FindObjectOfType<BrushPlacer>();
+        var parent = UnityEngine.Object.FindObjectOfType<DrawingCanvas>();
         return parent != null ? parent.transform : null;
     }
 

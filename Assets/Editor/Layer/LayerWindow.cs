@@ -3,17 +3,16 @@ using UnityEditor;
 using UnityEngine;
 using System;
 using System.Linq;
-using Unity.VisualScripting;
 
 public class LayerWindow : EditorWindow
 {
     private bool _isDragging;
     private bool _clickedInsideLayer;
 
-    private KeyValuePair<int, Layer> _draggingLayer = new KeyValuePair<int, Layer>(); // 현재 드래깅 중인 레이어
-    private KeyValuePair<int, Layer> _insertLayer = new KeyValuePair<int, Layer>();
+    private KeyValuePair<int, Layer> _currentDraggingLayer = new KeyValuePair<int, Layer>(); // 현재 드래깅 중인 레이어
+    private KeyValuePair<int, Layer> _registeredDraggedLayer = new KeyValuePair<int, Layer>(); // 위치를 맞바꿀 레이어
 
-    private bool _multiSelected = false;
+    private bool _multiSelected = false; //TODO : 구현 예정
     private DateTime _dragStartTime;
 
     [MenuItem("Photoshop/Layer")]
@@ -22,10 +21,9 @@ public class LayerWindow : EditorWindow
 
     private void OnEnable()
     {
+        Undo.undoRedoPerformed -= OnUndoRedoPerformed;
         Undo.undoRedoPerformed += OnUndoRedoPerformed;
         LayerInfo.ED.SelectedLayerIds.Clear();
-       
-
     }
     private void OnDisable()
     {
@@ -109,14 +107,7 @@ public class LayerWindow : EditorWindow
     }
     public void OnGUI()
     {
-        if (FindObjectOfType<BrushPlacer>() == null)
-        {
-            CreateCanvas();
-            return;
-        }
-
-        if (BrushInfo.GetBrushParent() != null)
-            DrawLayerListGUI();
+        DrawLayerListGUI();
 
         Rect seperateRect = GUILayoutUtility.GetLastRect();
         seperateRect.y += seperateRect.height;
@@ -127,7 +118,7 @@ public class LayerWindow : EditorWindow
         GUILayout.Space(10);
         GUILayout.BeginHorizontal(GUI.skin.box);
         GUILayout.FlexibleSpace();
-        CreateNewLayer();
+        DrawCreateNewLayerGUI();
         DrawCopyButtonListGUI();
         DeleteSelectedLayer();
   
@@ -139,8 +130,7 @@ public class LayerWindow : EditorWindow
     private void DrawLayerListGUI()
     {
         _clickedInsideLayer = false;
-        _scrollPos =  GUILayout.BeginScrollView(_scrollPos, false, true);
-
+        _scrollPos = GUILayout.BeginScrollView(_scrollPos, false, true);
         var sortedLayerList = LayerInfo.GetSortedCreationTimeLayerList();
 
         foreach (var layerPair in sortedLayerList)
@@ -160,7 +150,7 @@ public class LayerWindow : EditorWindow
             DraggedInput(i,layerData);
             GUI.backgroundColor = originBackgroundColor;
 
-            EditorHelper.DrawSeparatorLine(-3, 1.7f, new Color(0.1f, 0.1f, 0.1f, 0.5f));
+            EditorHelper.DrawSeparatorHeightLine(-3, 1.7f, new Color(0.1f, 0.1f, 0.1f, 0.5f));
             GUILayout.Space(-5);
         }
 
@@ -193,7 +183,7 @@ public class LayerWindow : EditorWindow
         Texture2D layerSnapshot = CaptureLayerSnapshot(layer); // 스냅샷 관련
         Rect imageRect = GUILayoutUtility.GetRect(50, 50);
         GUI.DrawTexture(imageRect, layerSnapshot, ScaleMode.ScaleToFit);
-        ChangeLayerName(layer); // 이름 변경 관련
+        DrawChangeLayerNameGUI(layer); // 이름 변경 관련
         GUILayout.FlexibleSpace();
         GUILayout.EndHorizontal();
     }
@@ -206,7 +196,7 @@ public class LayerWindow : EditorWindow
         if (newLayerRect.x != 0 && newLayerRect.y != 0)
             layer.LayerRect = newLayerRect;
 
-        if (_isDragging && IsContainLayerRect(layer.LayerRect) && _draggingLayer.Value != null)
+        if (_isDragging && IsContainLayerRect(layer.LayerRect) && _currentDraggingLayer.Value != null)
             EditorGUI.DrawRect(new Rect(layer.LayerRect.x, layer.LayerRect.y + layer.LayerRect.height, layer.LayerRect.width, 1), EditorHelper.Sky);
     }
 
@@ -223,7 +213,7 @@ public class LayerWindow : EditorWindow
                 DraggedMouseDrag(layer, newLayerRect);
                 break;
             case EventType.MouseUp:
-                DraggedMouseUp(id);
+                DraggedMouseUp();
                 break;
         }
         DrawDraggedSkyLineGUI(layer);
@@ -233,7 +223,7 @@ public class LayerWindow : EditorWindow
     {
         if (IsContainLayerRect(newLayerRect) && Event.current.button == 0)
         {
-            _draggingLayer = new KeyValuePair<int, Layer>(id, layer);
+            _currentDraggingLayer = new KeyValuePair<int, Layer>(id, layer);
             _dragStartTime = DateTime.Now;
             _clickedInsideLayer = true;
 
@@ -264,11 +254,11 @@ public class LayerWindow : EditorWindow
             Event.current.Use();
         }
     }
-    private void DraggedMouseUp(int id)
+    private void DraggedMouseUp()
     {
         _isDragging = false;
 
-        if(_insertLayer.Value != null)
+        if(_registeredDraggedLayer.Value != null)
         {
             Utils.UndoPop();
             ApplyDraggedLayer();
@@ -350,21 +340,21 @@ public class LayerWindow : EditorWindow
     {
         List<Layer> layerDatas = LayerInfo.GetLayerList();
 
-        if (_isDragging && _draggingLayer.Value != null)
+        if (_isDragging && _currentDraggingLayer.Value != null)
         {
             Color originBackgroundColor = GUI.backgroundColor;
             GUI.backgroundColor = EditorHelper.Gray01;
-            DrawDraggedLayerAtMouseGUI(_draggingLayer.Value, Event.current.mousePosition);
+            DrawDraggedLayerAtMouseGUI(_currentDraggingLayer.Value, Event.current.mousePosition);
             GUI.backgroundColor = originBackgroundColor;
 
             foreach (var layerData in layerDatas)
             {
-                if (_draggingLayer.Value == layerData)
+                if (_currentDraggingLayer.Value == layerData)
                     continue;
 
                 if (IsContainLayerRect(layerData.LayerRect))
                 {
-                    _insertLayer = new KeyValuePair<int, Layer>(layerData.Id, layerData);
+                    _registeredDraggedLayer = new KeyValuePair<int, Layer>(layerData.Id, layerData);
                     break;
                 }
             }
@@ -374,8 +364,8 @@ public class LayerWindow : EditorWindow
     {
         var prevLayerIndexs = new Dictionary<int, int>();
 
-        Layer A = _draggingLayer.Value;
-        Layer B = _insertLayer.Value;
+        Layer A = _currentDraggingLayer.Value;
+        Layer B = _registeredDraggedLayer.Value;
 
         UnityEngine.Object[] recordObjs = new UnityEngine.Object[] { A, B };
         Undo.RecordObjects(recordObjs, "Dragged Layer");
@@ -397,8 +387,8 @@ public class LayerWindow : EditorWindow
 
         GUIUtility.keyboardControl = 0;
 
-        _insertLayer = new KeyValuePair<int, Layer>();
-        _draggingLayer = new KeyValuePair<int, Layer>();
+        _registeredDraggedLayer = new KeyValuePair<int, Layer>();
+        _currentDraggingLayer = new KeyValuePair<int, Layer>();
 
         Utils.AddUndo("Apply draggedLayer", () =>
         {
@@ -450,7 +440,7 @@ public class LayerWindow : EditorWindow
     {
         GUI.enabled = LayerInfo.ED.SelectedLayerIds.Count > 0;
 
-        if (GUILayout.Button(Utils.GetIconContent("d_Collab.FileUpdated"), GUILayout.Width(40), GUILayout.Height(40)))
+        if (GUILayout.Button(EditorHelper.GetTrIcon("d_Collab.FileUpdated", "레이어 복사"), GUILayout.Width(40), GUILayout.Height(40)))
             CopySelectedLayer(Vector3.zero);
 
         if (GUILayout.Button("↑", GUILayout.Width(40), GUILayout.Height(40)))
@@ -540,7 +530,7 @@ public class LayerWindow : EditorWindow
 
         GUI.enabled = true;
     }
-    private void ChangeLayerName(Layer layerData)
+    private void DrawChangeLayerNameGUI(Layer layerData)
     {
         string layerName = layerData.Name;
 
@@ -561,40 +551,19 @@ public class LayerWindow : EditorWindow
             EditorGUILayout.LabelField(layerName, GUILayout.Width(200));
         }
     }
-    private static void CreateCanvas()
+    private void DrawCreateNewLayerGUI()
     {
-        if (GUILayout.Button("캔버스 만들기", GUILayout.Height(100)))
-        {
-            Camera main = Camera.main;
-            main.clearFlags = CameraClearFlags.SolidColor;
-            main.backgroundColor = Color.clear;
-            main.orthographic = true;
-            main.orthographicSize = 10.2f;
-            main.transform.position = new Vector3(0, 0, -10);
+        GUI.enabled = BrushInfo.BrushParent != null;
 
-            if (main.GetComponent<FitToScreen>() == null)
-                main.AddComponent<FitToScreen>();
-
-            GameObject canvas = new GameObject("Canvas");
-            GameObject collider = new GameObject("Collider");
-            canvas.AddComponent<BrushPlacer>();
-            canvas.GetComponent<BrushPlacer>().BrushPrefab = Resources.Load<GameObject>("Prefab/Cube");
-            collider.AddComponent<BoxCollider>();
-            collider.GetComponent<BoxCollider>().isTrigger = true;
-            collider.GetComponent<BoxCollider>().size = new Vector3(100, 100, 0.2f);
-
-            SpriteRenderer circle = new GameObject("Circle").AddComponent<SpriteRenderer>();
-        }
-    }
-    private void CreateNewLayer()
-    {
-        if (GUILayout.Button(Utils.GetIconContent("Collab.FileAdded"), GUILayout.Width(40), GUILayout.Height(40)))
+        if (GUILayout.Button(EditorHelper.GetTrIcon("Collab.FileAdded" , "레이어 생성"), GUILayout.Width(40), GUILayout.Height(40)))
         {
             LayerInfo.ED.SelectedLayerIds.Clear();
             LayerInfo.CreateNewLayer();
             GUIUtility.keyboardControl = 0;
-            _draggingLayer = new KeyValuePair<int, Layer>();
+            _currentDraggingLayer = new KeyValuePair<int, Layer>();
         }
+
+        GUI.enabled = true;
     }
 
     private bool IsEditingLayerName(Layer layerData) => LayerInfo.ED.SelectedLayerIds.Contains(layerData.Id);

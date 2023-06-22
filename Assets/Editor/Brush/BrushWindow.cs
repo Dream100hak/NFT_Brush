@@ -91,9 +91,9 @@ public class BrushWindow : EditorWindow
     {
         RefreshTabBtn();
         Initialize();
+        EditorSceneManager.sceneOpened -= OnSceneOpened;
         EditorSceneManager.sceneOpened += OnSceneOpened;
     }
-
     private void OnDisable()
     {
         EditorSceneManager.sceneOpened -= OnSceneOpened;
