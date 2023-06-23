@@ -3,23 +3,19 @@ using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
-public class BrushInfo
+public class BrushInfo :  InfoData<BrushInfoData>
 {
-    private static BrushInfoData s_editorData => GetBrushData();
-    public static BrushInfoData ED { get => s_editorData; }
-
     public static GameObject CurrentBrush { get => ED.Brushes[ED.GetSelectedBrushId()].TargetObj ; }
     private static Transform s_parent => GetBrushParent();
     public static Transform BrushParent { get => s_parent; }
-    public static BrushInfoData GetBrushData() { return Resources.Load<BrushInfoData>("Data/BrushInfoData");  }
 
     public static Transform GetBrushParent()
     { 
-        var parent = UnityEngine.Object.FindObjectOfType<DrawingCanvas>();
+        var parent = UnityEngine.Object.FindObjectOfType<FitCanvas>();
         return parent != null ? parent.transform : null;
     }
 
-    public static void DrawGridBrush(float areaWidth , Vector2 slotSize)
+    public static void DrawGridBrush(Vector2 slotSize)
     {
         if (ED == null && ED.Brushes.Count == 0)
             return;
@@ -74,7 +70,7 @@ public class BrushInfo
             brush.name = "Brush";
             brush.layer = LayerMask.NameToLayer("Canvas");
             brush.transform.SetParent(target);
-            brush.transform.localScale = Vector3.one * s_editorData.BrushSize;
+            brush.transform.localScale = Vector3.one * ED.BrushSize;
 
             EffectStraight effStraight = brush.GetOrAddComponent<EffectStraight>();
             EffectBlackhole effBlackhole = brush.GetOrAddComponent<EffectBlackhole>();
@@ -97,7 +93,7 @@ public class BrushInfo
 
             Renderer renderer = brush.GetComponent<Renderer>();
             Material material = new Material(renderer.sharedMaterial);
-            material.color = s_editorData.BrushColor;
+            material.color = ED.BrushColor;
             renderer.sharedMaterial = material;
             Undo.RegisterCreatedObjectUndo(brush, "Create Brush");
         }

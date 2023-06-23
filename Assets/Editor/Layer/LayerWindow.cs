@@ -55,28 +55,32 @@ public class LayerWindow : EditorWindow
         tempCamera.aspect = mainCamera.aspect;
         tempCamera.clearFlags = CameraClearFlags.SolidColor;
         tempCamera.backgroundColor = Color.clear;
+        tempCamera.cullingMask = mainCamera.cullingMask;
 
-        int canvasLayer = LayerMask.NameToLayer("Canvas");
-        tempCamera.cullingMask = 1 << canvasLayer;
+        tempCamera.cullingMask = 1 << LayerMask.NameToLayer("Canvas");
 
         Transform brushParent = BrushInfo.GetBrushParent();
         List<bool> layerStates = new List<bool>();
         for (int i = 0; i < brushParent.childCount; i++)
         {
             Transform childLayer = brushParent.GetChild(i);
+
             layerStates.Add(childLayer.gameObject.activeSelf);
+
             if (childLayer != layer.transform)
             {
                 childLayer.gameObject.SetActive(false);
             }
+
         }
 
         RenderTexture renderTexture = new RenderTexture(width, height, 24);
         GameObject gridQuad = GameObject.CreatePrimitive(PrimitiveType.Quad);
         gridQuad.layer = LayerMask.NameToLayer("Canvas");
-        gridQuad.transform.position = Vector3.zero;
+        gridQuad.transform.position = new Vector3(0,0,10);
         gridQuad.transform.rotation = tempCamera.transform.rotation;
         gridQuad.transform.localScale = new Vector3(50, 50, 1.0f);
+
         gridQuad.GetComponent<Renderer>().sharedMaterial = new Material(Shader.Find("Unlit/Transparent"));
         gridQuad.GetComponent<Renderer>().sharedMaterial.mainTexture = Resources.Load<Texture2D>("Textures/Grid");
         gridQuad.GetComponent<Renderer>().sharedMaterial.color = Color.gray;

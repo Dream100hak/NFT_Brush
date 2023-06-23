@@ -6,10 +6,8 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class LayerInfo
+public class LayerInfo : InfoData<LayerInfoData>
 {
-    private static LayerInfoData s_infoData => GetLayerEditorData();
-    public static LayerInfoData ED { get => s_infoData; }
 
     private static int s_generateId;
     public static int GenerateId { get => s_generateId; set => s_generateId = value; }
@@ -26,7 +24,7 @@ public class LayerInfo
     public static Transform CurrentLayer { get => s_currentLayer; set => s_currentLayer = value; }
 
 
-    public static LayerInfoData GetLayerEditorData() { return Resources.Load<LayerInfoData>("Data/LayerInfoData"); }
+
 
     [InitializeOnLoadMethod]
     private static void Initialize()

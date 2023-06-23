@@ -5,7 +5,6 @@ using System.Linq;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 
-
 public class BrushWindow : EditorWindow
 {
     private bool[] _showBrushTabs = new bool[3];
@@ -161,7 +160,7 @@ public class BrushWindow : EditorWindow
         OptionRefresh((int)E_BrushOption.Type, "종류", ref tabBoxPosX, () =>
         {
             GUILayout.Space(60);
-            BrushInfo.DrawGridBrush(position.x, new Vector2(60, 60));
+            BrushInfo.DrawGridBrush(new Vector2(60, 60));
         });
 
         OptionRefresh((int)E_BrushOption.Setting, "설정", ref tabBoxPosX, () =>
@@ -211,7 +210,6 @@ public class BrushWindow : EditorWindow
         BrushInfo.ED.BrushSize = Utils.EditPropertyWithUndo("크기", BrushInfo.ED.BrushSize, newSize => BrushInfo.ED.BrushSize = newSize, (label, value) => GUI.HorizontalSlider(sliderRect, value, 0.1f, 1f), BrushInfo.ED);
 
         EditorGUILayout.EndVertical();
-
         EditorGUILayout.EndHorizontal();
     }
     private void DrawBrushDistanceGUI()

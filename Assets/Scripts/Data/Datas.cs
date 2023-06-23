@@ -1,7 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System;
 
 [Serializable]
 public class Brush
@@ -10,4 +10,13 @@ public class Brush
     public string Name;
     public GameObject TargetObj;
     public bool Selected;
+}
+
+[Serializable]
+public class DrawingCanvas
+{
+    public int Id;
+    public string Name;
+    public GameObject CanvasObj;
+
 }

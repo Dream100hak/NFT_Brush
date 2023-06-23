@@ -44,21 +44,6 @@ public class Layer : MonoBehaviour
     }
 
     [SerializeField]
-    private int _layerOrder = 0;
-
-    public int LayerOrder
-    {
-        get => _layerOrder;
-        set
-        {
-            if (_layerOrder != value)
-            {
-                _layerOrder = value;
-            }
-        }
-    }
-
-    [SerializeField]
     private bool _hasChanged = false;
 
     public bool HasChanged
@@ -84,20 +69,6 @@ public class Layer : MonoBehaviour
             if (_snapShot != value)
             {
                 _snapShot = value;
-            }
-        }
-    }
-
-    [SerializeField]
-    private int _prevSiblingIndex = -1;
-    public int PrevSiblingIndex
-    {
-        get => _prevSiblingIndex;
-        set
-        {
-            if (_prevSiblingIndex != value)
-            {
-                _prevSiblingIndex = value;
             }
         }
     }
