@@ -3,10 +3,10 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using static UnityEngine.GraphicsBuffer;
 
 public class DrawingWindow : EditorWindow
 {
-
     private E_DrawingMode _drawingMode;
     public E_DrawingMode DrawingMode { get => _drawingMode; set { if (_drawingMode != value) _drawingMode = value; } }
     private E_EditMode _editMode;
@@ -88,13 +88,21 @@ public class DrawingWindow : EditorWindow
 
     private void DrawCreateCanvasGUI()
     {
-        DrawingInfo.CreateCanvasName =  EditorGUILayout.TextField("Name : ",  DrawingInfo.CreateCanvasName);
+        EditorGUI.BeginChangeCheck();
+        DrawingInfo.CreateCanvasName = EditorGUILayout.TextField("Name : ", DrawingInfo.CreateCanvasName);
+
+        if (EditorGUI.EndChangeCheck())
+            Repaint();
+  
         GUILayout.Space(10);
+        GUI.enabled = !string.IsNullOrEmpty(DrawingInfo.CreateCanvasName);
 
         if (GUILayout.Button("캔버스 만들기", GUILayout.Height(100)))
         {
             CreateCanvas();
         }
+
+        GUI.enabled = true;
     }
     private void CreateCanvas()
     {
@@ -118,7 +126,6 @@ public class DrawingWindow : EditorWindow
         DrawingCanvas canvas = new DrawingCanvas()
         {
             Name = DrawingInfo.CreateCanvasName,
-            CanvasObj = fitCanvas.gameObject
         };
 
         DrawingInfo.CurrentCanvas = canvas;
@@ -149,6 +156,7 @@ public class DrawingWindow : EditorWindow
 
         if (GUILayout.Button(EditorHelper.GetTrIcon("back", "뒤로 가기"), GUILayout.Width(40), GUILayout.Height(30)))
         {
+            LayerInfo.Clear();
             DrawingMode = E_DrawingMode.Create;
         }
         GUILayout.FlexibleSpace();
@@ -169,7 +177,7 @@ public class DrawingWindow : EditorWindow
         GUILayout.BeginHorizontal(GUI.skin.box);
 
         int orthographicSize = (int)(_captureCam.orthographicSize / Camera.main.orthographicSize * 100);
-        EditorHelper.CanvasInfoLabel("Good Canvas @ " + orthographicSize + "%", 200 , 20);
+        EditorHelper.CanvasInfoLabel(DrawingInfo.CreateCanvasName + " : " + orthographicSize + "%", 200 , 20);
 
         string x = "X : ";
         string y = "Y : ";
@@ -260,7 +268,7 @@ public class DrawingWindow : EditorWindow
                             BrushInfo.PaintBrush(Utils.SetZVectorZero(cubePosition));
                         }
                     }
-                    LayerInfo.CurrentLayer = null;
+       
                     _initialMousePos = Vector3.zero;
 
                     Repaint();

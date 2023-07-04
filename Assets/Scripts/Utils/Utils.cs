@@ -5,9 +5,9 @@ using UnityEditor;
 #endif
 using UnityEngine;
 
-public class Utils
+public static class Utils
 {
-    private static Stack<(string eventName, Action action)> _undoStack = new Stack<(string , Action)>();
+    private static Stack<(string eventName, Action action)> _undoStack = new Stack<(string, Action)>();
     private static Stack<(string eventName, Action action)> _redoStack = new Stack<(string, Action)>();
 
     public static void UndoPop()
@@ -93,6 +93,11 @@ public class Utils
     {
         EditorWindow[] windows = Resources.FindObjectsOfTypeAll(windowType) as EditorWindow[];
         return windows != null && windows.Length > 0;
+    }
+
+    public static T GetOrAddComponent<T>(this GameObject go) where T : Component
+    {
+        return go.GetComponent<T>() ?? go.AddComponent<T>();
     }
 #endif
     public static Vector3 SetZVectorZero(Vector3 vec)

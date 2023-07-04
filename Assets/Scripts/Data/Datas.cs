@@ -17,6 +17,5 @@ public class DrawingCanvas
 {
     public int Id;
     public string Name;
-    public GameObject CanvasObj;
 
 }

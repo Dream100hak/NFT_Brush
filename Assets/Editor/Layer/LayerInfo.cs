@@ -1,31 +1,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
-using UnityEditor;
+using UnityEditor; 
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class LayerInfo : InfoData<LayerInfoData>
 {
-
-    private static int s_generateId;
-    public static int GenerateId { get => s_generateId; set => s_generateId = value; }
-
-    public static Dictionary<int, Transform> LayerObjects { get; set; } = new Dictionary<int, Transform>();
-
-    private static SortedSet<int> s_emptyLayerIds = new SortedSet<int>();
-    public static SortedSet<int> EmptyLayerIds { get => s_emptyLayerIds; }
-
-    public static List<int> ToDeleteLayerIds { get; set; } = new List<int>(); // 삭제 예정 아이디
-    public static Dictionary<int, Transform> ToRestoreLayerIds { get; set; } = new Dictionary<int, Transform>(); // 복원 예정 아이디
-
-    private static Transform s_currentLayer;
-    public static Transform CurrentLayer { get => s_currentLayer; set => s_currentLayer = value; }
-
-
-
-
+    public static Dictionary<int, GameLayer> LayerObjects { get; set; } = new Dictionary<int, GameLayer>();
+    //public static List<int> ToDeleteLayerIds { get; set; } = new List<int>(); // 삭제 예정 아이디
+    //public static Dictionary<int, GameLayer> ToRestoreLayerIds { get; set; } = new Dictionary<int, GameLayer>(); // 복원 예정 아이디
     [InitializeOnLoadMethod]
     private static void Initialize()
     {
@@ -34,78 +19,48 @@ public class LayerInfo : InfoData<LayerInfoData>
     }
     private static void RunOnceOnEditorLoad()
     {
+        OnClear += () =>
+        {
+            LayerObjects.Clear();
+            ToDeleteIds.Clear();
+            ToRestoreIds.Clear();
+            ED.SelectedLayerIds.Clear();
+
+        };
+
         InitializeLayers();
         EditorApplication.update -= RunOnceOnEditorLoad;
     }
     private static void OnSceneOpened(Scene scene, OpenSceneMode mode)
     {
-        Clear();
         InitializeLayers();
-    }
-    public static void Clear()
-    {
-        LayerObjects.Clear();
-        s_emptyLayerIds.Clear();
-        s_generateId = 0;
-        s_currentLayer = null;
-        ToDeleteLayerIds.Clear();
-        ToRestoreLayerIds.Clear();
-        ED.SelectedLayerIds.Clear();
     }
     //씬 동기화 작업
     public static void InitializeLayers()
     {
-        Layer[] layersInScene = UnityEngine.Object.FindObjectsOfType<Layer>();
-        foreach (Layer layerData in layersInScene)
+        GameLayer[] layersInScene = UnityEngine.Object.FindObjectsOfType<GameLayer>();
+        foreach (GameLayer layerData in layersInScene)
         {
             int id = layerData.Id;
             if (!LayerObjects.ContainsKey(id))
             {
-                LayerObjects.Add(id, layerData.transform);
+                LayerObjects.Add(id, layerData);
             }
         }
     }
-    public static void GenerateFirstLayerId()
+
+    public static void CreateLayer(int newLayerId , GameObject newLayerObj)
     {
-        while (true)
-        {
-            if (LayerObjects.ContainsKey(s_generateId) == false)
-                break;
+        GameLayer newLayer =  newLayerObj.GetOrAddComponent<GameLayer>();
+        newLayerObj.transform.SetParent(BrushInfo.BrushParent);
+        newLayerObj.transform.SetSiblingIndex(0);
 
-            s_generateId++;
-        }
-    }
-    public static int GenerateLayerId()
-    {
-        int newLayerId;
-        if (s_emptyLayerIds.Count > 0)
-        {
-            newLayerId = s_emptyLayerIds.First();
-            s_emptyLayerIds.Remove(newLayerId);
-        }
-        else
-        {
-            GenerateFirstLayerId();
-            newLayerId = s_generateId;
-        }
+        newLayerObj.GetComponent<GameLayer>().Initialize(newLayerId, newLayerObj.name);
+        LayerObjects.Add(newLayerId, newLayer);
+ 
+        Undo.RegisterCreatedObjectUndo(newLayerObj, "Create Layer");
 
-        return newLayerId; 
-    }
-
-    public static void CreateLayer(int newLayerId , GameObject newLayer)
-    {
-        newLayer.GetOrAddComponent<Layer>();
-        newLayer.transform.SetParent(BrushInfo.BrushParent);
-        newLayer.transform.SetSiblingIndex(0);
-
-        newLayer.GetComponent<Layer>().Initialize(newLayerId, newLayer.name);
-
-        LayerObjects.Add(newLayerId, newLayer.transform);
-        s_currentLayer = newLayer.transform;
-
-        Undo.RegisterCreatedObjectUndo(s_currentLayer.gameObject, "Create Layer");
-
-        Selection.activeGameObject = newLayer.gameObject;
+        Selection.activeGameObject = newLayerObj.gameObject;
         ED.SelectedLayerIds.Add(newLayerId);
 
         Utils.AddUndo("Create Layer" , () =>
@@ -115,8 +70,8 @@ public class LayerInfo : InfoData<LayerInfoData>
             {
                 foreach (int id in destroyedLayers)
                 {
-                    ToDeleteLayerIds.Add(id);
-                    EmptyLayerIds.Add(id);
+                    ToDeleteIds.Add(id);
+                    EmptyGenerateIds.Add(id);
                 }
             }
 
@@ -129,7 +84,7 @@ public class LayerInfo : InfoData<LayerInfoData>
 
     public static void CreateNewLayer()
     {
-        int newLayerId = GenerateLayerId();
+        int newLayerId = NewGenerateId(LayerObjects);
 
        int prevChildCount = BrushInfo.BrushParent.childCount;
     
@@ -144,35 +99,15 @@ public class LayerInfo : InfoData<LayerInfoData>
         if (!LayerObjects.ContainsKey(originalId))
             return;
 
-        Transform originalLayer = LayerObjects[originalId];
+        GameLayer originalLayer = LayerObjects[originalId];
 
-        int newLayerId  = GenerateLayerId();
+        int newLayerId  = NewGenerateId(LayerObjects);
 
         GameObject newLayer = GameObject.Instantiate(originalLayer.gameObject); 
         newLayer.name = originalLayer.name + " Copy"; 
-        newLayer.transform.localPosition = originalLayer.localPosition + dir * BrushInfo.ED.PlacementDistance;
+        newLayer.transform.localPosition = originalLayer.transform.localPosition + dir * BrushInfo.ED.PlacementDistance;
 
         CreateLayer(newLayerId, newLayer);
-    }
-    public static void DeleteLayerIds()
-    {
-        if (ToDeleteLayerIds.Count > 0)
-        {
-            foreach (var id in ToDeleteLayerIds)
-                LayerObjects.Remove(id);
-
-            ToDeleteLayerIds.Clear();
-        }
-    }
-    public static void RestoreLayerIds()
-    {
-        if (ToRestoreLayerIds.Count > 0)
-        {
-            foreach (var layerDic in ToRestoreLayerIds)
-                LayerObjects.Add(layerDic.Key, layerDic.Value);
-
-            ToRestoreLayerIds.Clear();
-        }
     }
     public static void SetLayerHasChanged()
     {
@@ -181,7 +116,7 @@ public class LayerInfo : InfoData<LayerInfoData>
             if (layerObj.Value == null)
                 continue;
 
-            layerObj.Value.GetComponent<Layer>().HasChanged = true;
+            layerObj.Value.GetComponent<GameLayer>().HasChanged = true;
         }
     }
  
@@ -197,23 +132,24 @@ public class LayerInfo : InfoData<LayerInfoData>
         Selection.objects = selectedObjects;
     }
 
-    public static Dictionary<int, Transform> GetDictinaryLayers()
+    public static Dictionary<int, GameLayer> GetDictinaryLayers()
     {
         Transform cubeParent = BrushInfo.GetBrushParent();
-        Dictionary<int, Transform> layers = new Dictionary<int, Transform>();
+        Dictionary<int, GameLayer> layers = new Dictionary<int, GameLayer>();
 
         for (int i = 0; i < cubeParent.childCount; i++)
         {
-            Transform childLayer = cubeParent.GetChild(i);
+            Transform childLayerTr = cubeParent.GetChild(i);
+            GameLayer childLayer = childLayerTr.GetComponent<GameLayer>();
 
-            int id = childLayer.GetComponent<Layer>().Id;
-            string name = childLayer.GetComponent<Layer>().Name;
+            int id = childLayerTr.GetComponent<GameLayer>().Id;
+            string name = childLayerTr.GetComponent<GameLayer>().Name;
 
             if (!layers.ContainsKey(id))
                 layers.Add(id, childLayer);
 
-            childLayer.name = name;
-            childLayer.GetComponent<Layer>().HasChanged = true;
+            childLayerTr.name = name;
+            childLayerTr.GetComponent<GameLayer>().HasChanged = true;
         }
 
         return layers;
@@ -225,7 +161,7 @@ public class LayerInfo : InfoData<LayerInfoData>
 
         var remainingLayerObjects = LayerObjects
               .Where(x => x.Value != null)
-              .OrderByDescending(x => x.Value.GetComponent<Layer>().CreationTimestamp);
+              .OrderByDescending(x => x.Value.GetComponent<GameLayer>().CreationTimestamp);
 
         if (remainingLayerObjects.Any())
         {
@@ -241,40 +177,38 @@ public class LayerInfo : InfoData<LayerInfoData>
             .Select(x => x.Key)
             .ToList();
     }
-    public static List<Layer> GetLayerList()
+    public static List<GameLayer> GetLayerList()
     {
-        List<Layer> layerDatas = new List<Layer>();
+        List<GameLayer> layerDatas = new List<GameLayer>();
 
         foreach (var layerObj in LayerObjects)
         {
             if (layerObj.Value == null)
                 continue;
-            layerDatas.Add(layerObj.Value.GetComponent<Layer>());
+            layerDatas.Add(layerObj.Value.GetComponent<GameLayer>());
         }
 
         return layerDatas;
     }
 
-    public static List<Layer> GetLayerOrders()
+    public static List<GameLayer> GetLayerOrders()
     {
-        List<Layer> layerDatas = new List<Layer>();
+        List<GameLayer> layerDatas = new List<GameLayer>();
 
         Transform cubeParent = BrushInfo.BrushParent;
         foreach (Transform child in cubeParent)
         {
-            Layer layerData = child.GetComponent<Layer>();
+            GameLayer layerData = child.GetComponent<GameLayer>();
             if (layerData != null)
                 layerDatas.Add(layerData);
         }
-
         return layerDatas;
     }
-
-    public static List<KeyValuePair<int, Transform>> GetSortedCreationTimeLayerList()
+    public static List<KeyValuePair<int, GameLayer>> GetSortedCreationTimeLayerList()
     {
         return LayerObjects
             .Where(x => x.Value != null)
-            .OrderByDescending(x => x.Value.GetComponent<Layer>().CreationTimestamp)
+            .OrderByDescending(x => x.Value.CreationTimestamp)
             .ToList();
            
     }

@@ -186,6 +186,9 @@ public class BrushWindow : EditorWindow
     public void OnGUI()
     {
         DrawTab();
+
+        BrushInfo.DeleteLayerIds(BrushInfo.brushObjects);
+        BrushInfo.RestoreLayerIds(BrushInfo.brushObjects);
     }
     private void DrawBrushScaleGUI()
     {

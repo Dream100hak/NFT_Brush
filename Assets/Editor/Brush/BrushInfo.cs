@@ -1,11 +1,15 @@
+using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEditor;
+using UnityEditor.TerrainTools;
 using UnityEngine;
 
 public class BrushInfo :  InfoData<BrushInfoData>
 {
-    public static GameObject CurrentBrush { get => ED.Brushes[ED.GetSelectedBrushId()].TargetObj ; }
+    public static Dictionary<int, GameBrush> brushObjects { get; set; } = new Dictionary<int, GameBrush>();
+
+    public static GameObject CurrentBrush { get => ED.Brushes[ED.GetSelectedBrushId()].TargetObj; }
     private static Transform s_parent => GetBrushParent();
     public static Transform BrushParent { get => s_parent; }
 
@@ -56,57 +60,56 @@ public class BrushInfo :  InfoData<BrushInfoData>
         Transform cubeParent = GetBrushParent();
         var layerWindow = EditorWindow.GetWindow<LayerWindow>();
 
-        if (LayerInfo.ED.SelectedLayerIds.Any() == false)
+        if (LayerInfo.LayerObjects.Count == 0 || LayerInfo.ED.SelectedLayerIds.Any() == false)
             return;
 
         foreach(int selectedLayerId in LayerInfo.ED.SelectedLayerIds)
         {
-            GameObject brush = GameObject.Instantiate(CurrentBrush, position, Quaternion.identity) as GameObject;
-            Transform target = cubeParent.Cast<Transform>().FirstOrDefault(t => t.GetComponent<Layer>() != null && t.GetComponent<Layer>().Id == selectedLayerId);
+            GameObject brushObj = GameObject.Instantiate(CurrentBrush, position, Quaternion.identity) as GameObject;
+            GameLayer parentLayer = cubeParent.GetComponentsInChildren<GameLayer>().FirstOrDefault(t => t != null && t.Id == selectedLayerId);
 
-            if (target == null)
+            if (parentLayer == null)
                 return;
 
-            brush.name = "Brush";
-            brush.layer = LayerMask.NameToLayer("Canvas");
-            brush.transform.SetParent(target);
-            brush.transform.localScale = Vector3.one * ED.BrushSize;
+            int newBrushId = NewGenerateId(brushObjects);
 
-            EffectStraight effStraight = brush.GetOrAddComponent<EffectStraight>();
-            EffectBlackhole effBlackhole = brush.GetOrAddComponent<EffectBlackhole>();
-            EffectSnow effSnow = brush.GetOrAddComponent<EffectSnow>();
-            SpawnerSnow spawnerSnow = brush.GetOrAddComponent<SpawnerSnow>();
+            brushObj.transform.SetParent(parentLayer.transform);
+            GameBrush newBrush = brushObj.GetOrAddComponent<GameBrush>();
+            newBrush.Initialize(newBrushId, parentLayer.Id, ED, CurrentBrush);
 
-            if (ED.MoverEnabled)
+            brushObjects.Add(newBrushId, newBrush);
+
+            parentLayer.HasChanged = true;
+            parentLayer.ChildBrushIds.Add(newBrushId);
+
+            Undo.RegisterCreatedObjectUndo(newBrush, "Paint Brush");
+
+            Utils.AddUndo("Paint Brush", () =>
             {
-                effStraight.ApplyEffect(ED);
-                effBlackhole.ApplyEffect(ED);
-                effSnow.ApplyEffect(ED);
-            }
-
-            if (ED.NatureEnabled)
-            {
-                spawnerSnow.ApplySpawner(ED , CurrentBrush);
-            }
-
-            LayerInfo.LayerObjects[selectedLayerId].GetComponent<Layer>().HasChanged = true;
-
-            Renderer renderer = brush.GetComponent<Renderer>();
-            Material material = new Material(renderer.sharedMaterial);
-            material.color = ED.BrushColor;
-            renderer.sharedMaterial = material;
-            Undo.RegisterCreatedObjectUndo(brush, "Create Brush");
+                var destroyedBrushes = brushObjects.Where(x => x.Value == null).Select(x => x.Key).ToList();
+                if (destroyedBrushes.Count > 0)
+                {
+                    foreach (int id in destroyedBrushes)
+                    {
+                        ToDeleteIds.Add(id);
+                        EmptyGenerateIds.Add(id);
+                    }
+                }
+            });
         }
 
     }
 
     public static void RemoveBrush(RaycastHit hitInfo)
     {
-        if (hitInfo.collider != null && hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Canvas"))
+        if (LayerInfo.LayerObjects.Count == 0 || LayerInfo.ED.SelectedLayerIds.Any() == false)
+            return;
+
+        if ( hitInfo.collider != null && hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Canvas"))
         {
             GameObject cube = hitInfo.collider.gameObject;
             Undo.DestroyObjectImmediate(cube);
-            cube.transform.parent.GetComponent<Layer>().HasChanged = true;
+            cube.transform.parent.GetComponent<GameLayer>().HasChanged = true;
         }
     }
 }

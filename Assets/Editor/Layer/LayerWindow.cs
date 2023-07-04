@@ -9,8 +9,8 @@ public class LayerWindow : EditorWindow
     private bool _isDragging;
     private bool _clickedInsideLayer;
 
-    private KeyValuePair<int, Layer> _currentDraggingLayer = new KeyValuePair<int, Layer>(); // 현재 드래깅 중인 레이어
-    private KeyValuePair<int, Layer> _registeredDraggedLayer = new KeyValuePair<int, Layer>(); // 위치를 맞바꿀 레이어
+    private KeyValuePair<int, GameLayer> _currentDraggingLayer = new KeyValuePair<int, GameLayer>(); // 현재 드래깅 중인 레이어
+    private KeyValuePair<int, GameLayer> _registeredDraggedLayer = new KeyValuePair<int, GameLayer>(); // 위치를 맞바꿀 레이어
 
     private bool _multiSelected = false; //TODO : 구현 예정
     private DateTime _dragStartTime;
@@ -37,7 +37,7 @@ public class LayerWindow : EditorWindow
         Repaint();
     }
 
-    public Texture2D CaptureLayerSnapshot(Layer layer)
+    public Texture2D CaptureLayerSnapshot(GameLayer layer)
     {
         if (layer.HasChanged == false && layer.SnapShot != null)
             return layer.SnapShot;
@@ -140,18 +140,16 @@ public class LayerWindow : EditorWindow
         foreach (var layerPair in sortedLayerList)
         {
             int i = layerPair.Key;
-            Transform layer = layerPair.Value;
+            GameLayer layer = layerPair.Value;
 
             if (layer == null)
                 continue;
 
-            Layer layerData = layer.GetComponent<Layer>();
-
             Color originBackgroundColor = GUI.backgroundColor;
             GUI.backgroundColor = Color.clear;
             DrawSelectedLayerGUI(i);
-            DrawLayerInfoGUI(layerData);
-            DraggedInput(i,layerData);
+            DrawLayerInfoGUI(layer);
+            DraggedInput(i, layer);
             GUI.backgroundColor = originBackgroundColor;
 
             EditorHelper.DrawSeparatorHeightLine(-3, 1.7f, new Color(0.1f, 0.1f, 0.1f, 0.5f));
@@ -163,8 +161,8 @@ public class LayerWindow : EditorWindow
 
         RegisterDraggedLayer();
 
-        LayerInfo.DeleteLayerIds();
-        LayerInfo.RestoreLayerIds();
+        LayerInfo.DeleteLayerIds(LayerInfo.LayerObjects);
+        LayerInfo.RestoreLayerIds(LayerInfo.LayerObjects);
         GUILayout.EndScrollView();
         Repaint();
     }
@@ -181,7 +179,7 @@ public class LayerWindow : EditorWindow
         }
     }
     //레이어 정보 박스 드로잉 
-    private void DrawLayerInfoGUI(Layer layer)
+    private void DrawLayerInfoGUI(GameLayer layer)
     {
         GUILayout.BeginHorizontal(EditorHelper.WhiteSkinBoxStyle());
         Texture2D layerSnapshot = CaptureLayerSnapshot(layer); // 스냅샷 관련
@@ -192,7 +190,7 @@ public class LayerWindow : EditorWindow
         GUILayout.EndHorizontal();
     }
     //드래그 라인 드로잉 
-    private void DrawDraggedSkyLineGUI(Layer layer)
+    private void DrawDraggedSkyLineGUI(GameLayer layer)
     {
         Rect newLayerRect = GUILayoutUtility.GetLastRect();
         newLayerRect.width = EditorGUIUtility.currentViewWidth;
@@ -204,7 +202,7 @@ public class LayerWindow : EditorWindow
             EditorGUI.DrawRect(new Rect(layer.LayerRect.x, layer.LayerRect.y + layer.LayerRect.height, layer.LayerRect.width, 1), EditorHelper.Sky);
     }
 
-    private void DraggedInput(int id, Layer layer)
+    private void DraggedInput(int id, GameLayer layer)
     {
         Rect newLayerRect = GUILayoutUtility.GetLastRect();
 
@@ -223,11 +221,11 @@ public class LayerWindow : EditorWindow
         DrawDraggedSkyLineGUI(layer);
     }
 
-    private void DraggedMouseDown(int id, Layer layer, Rect newLayerRect)
+    private void DraggedMouseDown(int id, GameLayer layer, Rect newLayerRect)
     {
         if (IsContainLayerRect(newLayerRect) && Event.current.button == 0)
         {
-            _currentDraggingLayer = new KeyValuePair<int, Layer>(id, layer);
+            _currentDraggingLayer = new KeyValuePair<int, GameLayer>(id, layer);
             _dragStartTime = DateTime.Now;
             _clickedInsideLayer = true;
 
@@ -243,7 +241,7 @@ public class LayerWindow : EditorWindow
             Event.current.Use();
         }
     }
-    private void DraggedMouseDrag(Layer layer, Rect newLayerRect)
+    private void DraggedMouseDrag(GameLayer layer, Rect newLayerRect)
     {
         if (IsContainLayerRect(newLayerRect) && Event.current.button == 0)
         {
@@ -293,7 +291,7 @@ public class LayerWindow : EditorWindow
 
         if (LayerInfo.ED.SelectedLayerIds.Any())
         {
-            List<Layer> layerDatas = LayerInfo.GetLayerOrders();
+            List<GameLayer> layerDatas = LayerInfo.GetLayerOrders();
             int firstSelectedIndex = layerDatas.FindIndex(layerData => LayerInfo.ED.SelectedLayerIds.Contains(layerData.Id));
             int currentLayerIndex = layerDatas.FindIndex(layerData => layerData.Id == id);
             int startIndex = Math.Min(firstSelectedIndex, currentLayerIndex);
@@ -342,7 +340,7 @@ public class LayerWindow : EditorWindow
 
     private void RegisterDraggedLayer()
     {
-        List<Layer> layerDatas = LayerInfo.GetLayerList();
+        List<GameLayer> layerDatas = LayerInfo.GetLayerList();
 
         if (_isDragging && _currentDraggingLayer.Value != null)
         {
@@ -358,7 +356,7 @@ public class LayerWindow : EditorWindow
 
                 if (IsContainLayerRect(layerData.LayerRect))
                 {
-                    _registeredDraggedLayer = new KeyValuePair<int, Layer>(layerData.Id, layerData);
+                    _registeredDraggedLayer = new KeyValuePair<int, GameLayer>(layerData.Id, layerData);
                     break;
                 }
             }
@@ -368,8 +366,8 @@ public class LayerWindow : EditorWindow
     {
         var prevLayerIndexs = new Dictionary<int, int>();
 
-        Layer A = _currentDraggingLayer.Value;
-        Layer B = _registeredDraggedLayer.Value;
+        GameLayer A = _currentDraggingLayer.Value;
+        GameLayer B = _registeredDraggedLayer.Value;
 
         UnityEngine.Object[] recordObjs = new UnityEngine.Object[] { A, B };
         Undo.RecordObjects(recordObjs, "Dragged Layer");
@@ -391,8 +389,8 @@ public class LayerWindow : EditorWindow
 
         GUIUtility.keyboardControl = 0;
 
-        _registeredDraggedLayer = new KeyValuePair<int, Layer>();
-        _currentDraggingLayer = new KeyValuePair<int, Layer>();
+        _registeredDraggedLayer = new KeyValuePair<int, GameLayer>();
+        _currentDraggingLayer = new KeyValuePair<int, GameLayer>();
 
         Utils.AddUndo("Apply draggedLayer", () =>
         {
@@ -408,7 +406,7 @@ public class LayerWindow : EditorWindow
         });
     }
 
-    private void DrawDraggedLayerAtMouseGUI(Layer layer, Vector2 mousePos)
+    private void DrawDraggedLayerAtMouseGUI(GameLayer layer, Vector2 mousePos)
     {
         GUI.color = new Color(GUI.color.r, GUI.color.g, GUI.color.b, 0.5f);
         float width = EditorGUIUtility.currentViewWidth / 1.5f;
@@ -420,7 +418,7 @@ public class LayerWindow : EditorWindow
     }
     private void ClearSelectedLayers()
     {
-        if (Event.current.type == EventType.MouseDown)
+        if (Event.current.type == EventType.MouseDown && LayerInfo.LayerObjects.Count > 0)
         {
             List<int> prevSelectedLayerIds = new List<int>(LayerInfo.ED.SelectedLayerIds);
 
@@ -464,6 +462,7 @@ public class LayerWindow : EditorWindow
             TempAllDelete();
     }
     
+    //TODO : 삭제 예정
     void TempAllDelete()
     {
         Undo.ClearAll();
@@ -471,8 +470,8 @@ public class LayerWindow : EditorWindow
 
         LayerInfo.Clear();
 
-        Layer[] layersInScene = UnityEngine.Object.FindObjectsOfType<Layer>();
-        foreach (Layer layerData in layersInScene)
+        GameLayer[] layersInScene = UnityEngine.Object.FindObjectsOfType<GameLayer>();
+        foreach (GameLayer layerData in layersInScene)
         {
             DestroyImmediate(layerData.gameObject);
         }
@@ -501,9 +500,9 @@ public class LayerWindow : EditorWindow
         {
             foreach (int id in LayerInfo.ED.SelectedLayerIds)
             {
-                Transform layer = LayerInfo.LayerObjects[id];
-                LayerInfo.ToDeleteLayerIds.Add(id);
-                LayerInfo.EmptyLayerIds.Add(id);
+                GameLayer layer = LayerInfo.LayerObjects[id];
+                LayerInfo.ToDeleteIds.Add(id);
+                LayerInfo.EmptyGenerateIds.Add(id);
 
                 Undo.DestroyObjectImmediate(layer.gameObject);
             }
@@ -521,10 +520,10 @@ public class LayerWindow : EditorWindow
                 {
                     foreach (int id in createdLayers)
                     {
-                        if (LayerInfo.ToRestoreLayerIds.ContainsKey(id) == false)
-                            LayerInfo.ToRestoreLayerIds.Add(id, layers[id]);
+                        if (LayerInfo.ToRestoreIds.ContainsKey(id) == false)
+                            LayerInfo.ToRestoreIds.Add(id, layers[id]);
 
-                        LayerInfo.EmptyLayerIds.Remove(id);
+                        LayerInfo.EmptyGenerateIds.Remove(id);
                     }
                 }
             });
@@ -534,7 +533,7 @@ public class LayerWindow : EditorWindow
 
         GUI.enabled = true;
     }
-    private void DrawChangeLayerNameGUI(Layer layerData)
+    private void DrawChangeLayerNameGUI(GameLayer layerData)
     {
         string layerName = layerData.Name;
 
@@ -564,12 +563,12 @@ public class LayerWindow : EditorWindow
             LayerInfo.ED.SelectedLayerIds.Clear();
             LayerInfo.CreateNewLayer();
             GUIUtility.keyboardControl = 0;
-            _currentDraggingLayer = new KeyValuePair<int, Layer>();
+            _currentDraggingLayer = new KeyValuePair<int, GameLayer>();
         }
 
         GUI.enabled = true;
     }
 
-    private bool IsEditingLayerName(Layer layerData) => LayerInfo.ED.SelectedLayerIds.Contains(layerData.Id);
+    private bool IsEditingLayerName(GameLayer layerData) => LayerInfo.ED.SelectedLayerIds.Contains(layerData.Id);
     private bool IsContainLayerRect(Rect layerRect) => layerRect.Contains(Event.current.mousePosition);
 }

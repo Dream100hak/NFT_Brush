@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-public class Layer : MonoBehaviour
+public class GameLayer : MonoBehaviour
 {
+    //Brushg Info Setting
+
     [SerializeField]
     private int _id = -1;
     public int Id { get => _id; set { _id = value; } }
@@ -36,25 +38,20 @@ public class Layer : MonoBehaviour
         set
         {
             if (_layerRect != value)
-            {
-                _layerRect = value;
-            }
-
+            _layerRect = value;
         }
     }
 
     [SerializeField]
     private bool _hasChanged = false;
-
     public bool HasChanged
     {
         get => _hasChanged;
         set
         {
             if (_hasChanged != value)
-            {
                 _hasChanged = value;
-            }
+            
         }
     }
 
@@ -67,11 +64,14 @@ public class Layer : MonoBehaviour
         set
         {
             if (_snapShot != value)
-            {
                 _snapShot = value;
-            }
+            
         }
     }
+
+    private List<int> _childBrushIds = new List<int>();
+    public List<int> ChildBrushIds { get => _childBrushIds; } 
+ 
 
     public void Initialize(int newId , string newName)
     {
@@ -80,4 +80,10 @@ public class Layer : MonoBehaviour
         Name = newName;
         HasChanged = true;
     }
+
+    public void RemoveChildBrush()
+    {
+
+    }
+
 }
