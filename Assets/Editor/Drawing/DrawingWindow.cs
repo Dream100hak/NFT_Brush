@@ -1,3 +1,5 @@
+using System.IO;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -114,20 +116,21 @@ public class DrawingWindow : EditorWindow
         main.transform.position = new Vector3(0, 0, -10);
         main.GetOrAddComponent<FitToScreen>();
 
-        FitCanvas fitCanvas = FindObjectOfType<FitCanvas>();
-        if(fitCanvas != null)
+        GameCanvas gameCanvas = FindObjectOfType<GameCanvas>();
+        if(gameCanvas != null)
         {
-            DestroyImmediate(fitCanvas.gameObject);
+            DestroyImmediate(gameCanvas.gameObject);
         }
              
-        fitCanvas = new GameObject("Canvas").AddComponent<FitCanvas>();
-        fitCanvas.Initialize();
+        gameCanvas = new GameObject("Canvas").AddComponent<GameCanvas>();
+        gameCanvas.Initialize();
 
         DrawingCanvas canvas = new DrawingCanvas()
         {
             Name = DrawingInfo.CreateCanvasName,
         };
 
+        DrawingInfo.ED.CanvasDatas.Add(canvas);
         DrawingInfo.CurrentCanvas = canvas;
 
         DrawingMode = E_DrawingMode.Edit;
@@ -167,9 +170,33 @@ public class DrawingWindow : EditorWindow
 
         if (GUILayout.Button("Save", GUILayout.Width(100), GUILayout.Height(30)))
         {
-            // TODO : Save
+            SaveCanvas();
         }
         GUILayout.EndHorizontal();
+    }
+    private void SaveCanvas()
+    {
+        var path = EditorUtility.SaveFilePanel("캔버스 저장", Application.streamingAssetsPath + "Canvas/", DrawingInfo.CurrentCanvas.Name + ".bin", "bin");
+        if (string.IsNullOrEmpty(path) == false)
+        {
+            byte[] data = DrawingInfo.GameCanvas.Serialize();
+            File.WriteAllBytes(path, data);
+            ShowNotification(new GUIContent("저장 성공!!"), 2);
+        }
+
+    }
+    private void LoadCanvas()
+    {
+        var path = EditorUtility.OpenFilePanel("캔버스 불러오기", Application.dataPath, "bin");
+
+        if (string.IsNullOrEmpty(path) == false)
+        {
+            byte[] bytes = File.ReadAllBytes(path);
+            if (bytes != null)
+            {
+              //  targetGrid.Import(bytes, targetPalette);
+            }
+        }
     }
 
     private void DrawCanvasInfoGUI(Rect canvasRect)
@@ -273,6 +300,20 @@ public class DrawingWindow : EditorWindow
 
                     Repaint();
                     e.Use();
+
+
+                    Utils.AddUndo("Paint Brush", () =>
+                    {
+                        var destroyedBrushes = BrushInfo.brushObjects.Where(x => x.Value == null).Select(x => x.Key).ToList();
+                        if (destroyedBrushes.Count > 0)
+                        {
+                            foreach (int id in destroyedBrushes)
+                            {
+                                BrushInfo.ToDeleteIds.Add(id);
+                                BrushInfo.EmptyGenerateIds.Add(id);
+                            }
+                        }
+                    });
                 }
                 else if (e.type == EventType.MouseDrag && e.button == 0 && e.shift == false)
                 {

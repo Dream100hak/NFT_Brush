@@ -1,23 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEditor;
-using UnityEditor.TerrainTools;
 using UnityEngine;
+
 
 public class BrushInfo :  InfoData<BrushInfoData>
 {
     public static Dictionary<int, GameBrush> brushObjects { get; set; } = new Dictionary<int, GameBrush>();
 
     public static GameObject CurrentBrush { get => ED.Brushes[ED.GetSelectedBrushId()].TargetObj; }
-    private static Transform s_parent => GetBrushParent();
-    public static Transform BrushParent { get => s_parent; }
-
-    public static Transform GetBrushParent()
-    { 
-        var parent = UnityEngine.Object.FindObjectOfType<FitCanvas>();
-        return parent != null ? parent.transform : null;
-    }
 
     public static void DrawGridBrush(Vector2 slotSize)
     {
@@ -57,7 +48,7 @@ public class BrushInfo :  InfoData<BrushInfoData>
 
     public static void PaintBrush(Vector3 position)
     {
-        Transform cubeParent = GetBrushParent();
+        Transform cubeParent = DrawingInfo.GameCanvas.transform;
         var layerWindow = EditorWindow.GetWindow<LayerWindow>();
 
         if (LayerInfo.LayerObjects.Count == 0 || LayerInfo.ED.SelectedLayerIds.Any() == false)
@@ -75,27 +66,14 @@ public class BrushInfo :  InfoData<BrushInfoData>
 
             brushObj.transform.SetParent(parentLayer.transform);
             GameBrush newBrush = brushObj.GetOrAddComponent<GameBrush>();
-            newBrush.Initialize(newBrushId, parentLayer.Id, ED, CurrentBrush);
+            newBrush.Initialize(newBrushId, ED.GetSelectedBrushId(), ED, CurrentBrush);
 
             brushObjects.Add(newBrushId, newBrush);
 
             parentLayer.HasChanged = true;
-            parentLayer.ChildBrushIds.Add(newBrushId);
+            parentLayer.AddBrush(newBrush);
 
-            Undo.RegisterCreatedObjectUndo(newBrush, "Paint Brush");
-
-            Utils.AddUndo("Paint Brush", () =>
-            {
-                var destroyedBrushes = brushObjects.Where(x => x.Value == null).Select(x => x.Key).ToList();
-                if (destroyedBrushes.Count > 0)
-                {
-                    foreach (int id in destroyedBrushes)
-                    {
-                        ToDeleteIds.Add(id);
-                        EmptyGenerateIds.Add(id);
-                    }
-                }
-            });
+            Undo.RegisterCreatedObjectUndo(brushObj, "Paint Brush");
         }
 
     }

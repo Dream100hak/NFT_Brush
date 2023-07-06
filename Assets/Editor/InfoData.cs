@@ -16,7 +16,7 @@ public class InfoData<T> where T : UnityEngine.Object, new()
     public static List<int> ToDeleteIds { get; set; } = new List<int>(); // 삭제 예정 아이디
     public static Dictionary<int, Component> ToRestoreIds { get; set; } = new Dictionary<int, Component>(); // 복원 예정 아이디
 
-    public static Action OnClear; 
+    public static Action OnClear;
 
     private static T s_editorData;
     public static T ED

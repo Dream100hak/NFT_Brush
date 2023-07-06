@@ -5,16 +5,19 @@ using static UnityEngine.GraphicsBuffer;
 
 public class GameBrush : MonoBehaviour
 {
-    public Color _color = Color.white;
-    public int _id = -1;
-    public int _parentLayerId = -1;
-    public GameObject _currentBrush;
+    private int _id = -1; //고유 아이디
+    private int _brushTypeId = -1; // 브러시 종류를 고르는 아이디
+    private Color _color = Color.white;
 
-    public void Initialize(int id , int parentLayerId , BrushInfoData ED , GameObject curBrush)
+    public int Id { get { return _id; } set { _id = value; }  }  
+    public int BrushTypeId { get { return _brushTypeId; } set { _brushTypeId = value; }  }  
+    public Color Color { get { return _color; } set { _color = value; }  }  
+
+
+    public void Initialize(int id , int brushTypeId, BrushInfoData ED , GameObject curBrush)
     {
         _id = id;
-        _parentLayerId = parentLayerId;
-        _currentBrush = curBrush;
+        _brushTypeId = brushTypeId;
         _color = ED.BrushColor;
         
         gameObject.name = "Brush";

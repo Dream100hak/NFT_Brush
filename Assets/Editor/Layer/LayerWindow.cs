@@ -18,7 +18,6 @@ public class LayerWindow : EditorWindow
     [MenuItem("Photoshop/Layer")]
     public static void ShowWindow() => GetWindow<LayerWindow>("Layer");
 
-
     private void OnEnable()
     {
         Undo.undoRedoPerformed -= OnUndoRedoPerformed;
@@ -59,7 +58,7 @@ public class LayerWindow : EditorWindow
 
         tempCamera.cullingMask = 1 << LayerMask.NameToLayer("Canvas");
 
-        Transform brushParent = BrushInfo.GetBrushParent();
+        Transform brushParent = DrawingInfo.GameCanvas.transform;
         List<bool> layerStates = new List<bool>();
         for (int i = 0; i < brushParent.childCount; i++)
         {
@@ -394,7 +393,7 @@ public class LayerWindow : EditorWindow
 
         Utils.AddUndo("Apply draggedLayer", () =>
         {
-            var layers = LayerInfo.GetDictinaryLayers();
+            var layers = LayerInfo.GetLayersHierarchy();
 
             foreach (var layer in layers)
             {
@@ -469,6 +468,7 @@ public class LayerWindow : EditorWindow
         Utils.ClearUndoRedo();
 
         LayerInfo.Clear();
+        DrawingInfo.GameCanvas.ClearLayers();
 
         GameLayer[] layersInScene = UnityEngine.Object.FindObjectsOfType<GameLayer>();
         foreach (GameLayer layerData in layersInScene)
@@ -503,26 +503,30 @@ public class LayerWindow : EditorWindow
                 GameLayer layer = LayerInfo.LayerObjects[id];
                 LayerInfo.ToDeleteIds.Add(id);
                 LayerInfo.EmptyGenerateIds.Add(id);
+                DrawingInfo.GameCanvas.RemoveLayer(id);
 
                 Undo.DestroyObjectImmediate(layer.gameObject);
             }
 
             LayerInfo.SearchTopLayerId();
-
-            GUIUtility.keyboardControl = 0;
             _isDragging = false;
 
             Utils.AddUndo("Delete selected layer" ,() =>
             {
-                var layers = LayerInfo.GetDictinaryLayers();
+                LayerInfo.ED.SelectedLayerIds.Clear();
+                var layers = LayerInfo.GetLayersHierarchy();
                 var createdLayers = layers.Keys.Except(LayerInfo.LayerObjects.Keys).ToList();
                 if (createdLayers.Count > 0)
                 {
                     foreach (int id in createdLayers)
                     {
                         if (LayerInfo.ToRestoreIds.ContainsKey(id) == false)
+                        {
                             LayerInfo.ToRestoreIds.Add(id, layers[id]);
-
+                            LayerInfo.ED.SelectedLayerIds.Add(id);
+                            DrawingInfo.GameCanvas.AddLayer(LayerInfo.LayerObjects[id]);
+                        }
+                          
                         LayerInfo.EmptyGenerateIds.Remove(id);
                     }
                 }
@@ -556,7 +560,7 @@ public class LayerWindow : EditorWindow
     }
     private void DrawCreateNewLayerGUI()
     {
-        GUI.enabled = BrushInfo.BrushParent != null;
+        GUI.enabled = DrawingInfo.GameCanvas != null;
 
         if (GUILayout.Button(EditorHelper.GetTrIcon("Collab.FileAdded" , "레이어 생성"), GUILayout.Width(40), GUILayout.Height(40)))
         {

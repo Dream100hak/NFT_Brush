@@ -6,8 +6,7 @@ using UnityEngine;
 
 public class GameLayer : MonoBehaviour
 {
-    //Brushg Info Setting
-
+ 
     [SerializeField]
     private int _id = -1;
     public int Id { get => _id; set { _id = value; } }
@@ -69,9 +68,19 @@ public class GameLayer : MonoBehaviour
         }
     }
 
-    private List<int> _childBrushIds = new List<int>();
-    public List<int> ChildBrushIds { get => _childBrushIds; } 
- 
+    private Dictionary<int, GameBrush> _brushDics = new Dictionary<int, GameBrush>();
+    public Dictionary<int, GameBrush> BrushDics { get => _brushDics; }
+
+
+    public void AddBrush(GameBrush brush)
+    {
+        _brushDics.Add(brush.Id, brush);
+    }
+    public void RemoveBrush(int id)
+    {
+        if(_brushDics.ContainsKey(id))
+            _brushDics.Remove(id);
+    }
 
     public void Initialize(int newId , string newName)
     {

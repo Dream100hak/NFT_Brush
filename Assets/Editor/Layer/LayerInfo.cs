@@ -9,8 +9,7 @@ using UnityEngine.SceneManagement;
 public class LayerInfo : InfoData<LayerInfoData>
 {
     public static Dictionary<int, GameLayer> LayerObjects { get; set; } = new Dictionary<int, GameLayer>();
-    //public static List<int> ToDeleteLayerIds { get; set; } = new List<int>(); // 삭제 예정 아이디
-    //public static Dictionary<int, GameLayer> ToRestoreLayerIds { get; set; } = new Dictionary<int, GameLayer>(); // 복원 예정 아이디
+
     [InitializeOnLoadMethod]
     private static void Initialize()
     {
@@ -52,11 +51,13 @@ public class LayerInfo : InfoData<LayerInfoData>
     public static void CreateLayer(int newLayerId , GameObject newLayerObj)
     {
         GameLayer newLayer =  newLayerObj.GetOrAddComponent<GameLayer>();
-        newLayerObj.transform.SetParent(BrushInfo.BrushParent);
+        newLayerObj.transform.SetParent(DrawingInfo.GameCanvas.transform);
         newLayerObj.transform.SetSiblingIndex(0);
 
         newLayerObj.GetComponent<GameLayer>().Initialize(newLayerId, newLayerObj.name);
         LayerObjects.Add(newLayerId, newLayer);
+
+        DrawingInfo.GameCanvas.AddLayer(newLayer);
  
         Undo.RegisterCreatedObjectUndo(newLayerObj, "Create Layer");
 
@@ -72,6 +73,7 @@ public class LayerInfo : InfoData<LayerInfoData>
                 {
                     ToDeleteIds.Add(id);
                     EmptyGenerateIds.Add(id);
+                    DrawingInfo.GameCanvas.RemoveLayer(id);
                 }
             }
 
@@ -86,7 +88,7 @@ public class LayerInfo : InfoData<LayerInfoData>
     {
         int newLayerId = NewGenerateId(LayerObjects);
 
-       int prevChildCount = BrushInfo.BrushParent.childCount;
+       int prevChildCount = DrawingInfo.GameCanvas.transform.childCount;
     
         GameObject newLayer = new GameObject("새 레이어 " + newLayerId.ToString("00"));
         newLayer.transform.localPosition = new Vector3(0, 0, -0.01f * prevChildCount);
@@ -132,9 +134,9 @@ public class LayerInfo : InfoData<LayerInfoData>
         Selection.objects = selectedObjects;
     }
 
-    public static Dictionary<int, GameLayer> GetDictinaryLayers()
+    public static Dictionary<int, GameLayer> GetLayersHierarchy()
     {
-        Transform cubeParent = BrushInfo.GetBrushParent();
+        Transform cubeParent = DrawingInfo.GameCanvas.transform;
         Dictionary<int, GameLayer> layers = new Dictionary<int, GameLayer>();
 
         for (int i = 0; i < cubeParent.childCount; i++)
@@ -167,7 +169,10 @@ public class LayerInfo : InfoData<LayerInfoData>
         {
             int topLayerId = remainingLayerObjects.First().Key;
             ED.SelectedLayerIds.Add(topLayerId);
+            Selection.activeGameObject = remainingLayerObjects.First().Value.gameObject;
         }
+
+ 
     }
 
     public static List<int> GetLayerIdList()
@@ -195,7 +200,7 @@ public class LayerInfo : InfoData<LayerInfoData>
     {
         List<GameLayer> layerDatas = new List<GameLayer>();
 
-        Transform cubeParent = BrushInfo.BrushParent;
+        Transform cubeParent = DrawingInfo.GameCanvas.transform;
         foreach (Transform child in cubeParent)
         {
             GameLayer layerData = child.GetComponent<GameLayer>();

@@ -104,12 +104,9 @@ public class BrushWindow : EditorWindow
         ColorPaletteGUI.Hue = y / _hueRect.height;
 
         BrushInfo.ED.Hue = ColorPaletteGUI.Hue;
-
         ColorPaletteGUI.ApplyHue();
         ColorPaletteGUI.ApplySaturation();
-
         BrushInfo.ED.BrushColor = ColorPaletteGUI.Color;
-
         _knobHueRect = new Rect(_hueRect.x - 34 + _hueRect.width, _hueRect.y - 5 + _hueRect.height * ColorPaletteGUI.Hue, 10, 10);
         BrushInfo.ED.HuePos = _knobHueRect.position;
        
@@ -185,10 +182,12 @@ public class BrushWindow : EditorWindow
 
     public void OnGUI()
     {
-        DrawTab();
 
         BrushInfo.DeleteLayerIds(BrushInfo.brushObjects);
         BrushInfo.RestoreLayerIds(BrushInfo.brushObjects);
+
+        DrawTab();
+
     }
     private void DrawBrushScaleGUI()
     {
