@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TMPro.EditorUtilities;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -105,4 +106,5 @@ public static class Utils
         vec.z = 0;
         return vec;
     }
+
 }

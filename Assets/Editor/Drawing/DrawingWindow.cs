@@ -2,9 +2,7 @@ using System.IO;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using static UnityEngine.GraphicsBuffer;
 
 public class DrawingWindow : EditorWindow
@@ -30,21 +28,15 @@ public class DrawingWindow : EditorWindow
 
     private void OnEnable()
     {
+        DrawingInfo.OnClear += DrawingInfo.ClearHandler;
         _editGUIContents = new GUIContent[] { EditorHelper.GetTrIcon("ViewToolMove", "옮기기"), EditorHelper.GetTrIcon("Grid.BoxTool", "선택"), EditorHelper.GetTrIcon("Grid.PaintTool", "그리기"), EditorHelper.GetTrIcon("Grid.EraserTool", "지우기") };
-       
         InitializeCaptureCamera();
-        EditorSceneManager.sceneOpened += OnSceneOpened;
-        EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
-
+        GetPreviewCanvasList();
     }
     private void OnDisable()
     {
-        EditorSceneManager.sceneOpened -= OnSceneOpened;
-        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        DrawingInfo.OnClear -= DrawingInfo.ClearHandler;
     }
-    private void OnSceneOpened(Scene scene, OpenSceneMode mode) =>  InitializeCaptureCamera();
-    private void OnPlayModeStateChanged(PlayModeStateChange state) => InitializeCaptureCamera();
-
     private void InitializeCaptureCamera()
     {
         GameObject cam = GameObject.Find("DrawCamera") ?? new GameObject("DrawCamera");
@@ -80,6 +72,7 @@ public class DrawingWindow : EditorWindow
         {
             case E_DrawingMode.Create:
                 DrawCreateCanvasGUI();
+                DrawPreviewCanvasGUI();
                 break;
             case E_DrawingMode.Edit:
                 SceneView.lastActiveSceneView.in2DMode = true;
@@ -118,20 +111,10 @@ public class DrawingWindow : EditorWindow
 
         GameCanvas gameCanvas = FindObjectOfType<GameCanvas>();
         if(gameCanvas != null)
-        {
             DestroyImmediate(gameCanvas.gameObject);
-        }
-             
+       
         gameCanvas = new GameObject("Canvas").AddComponent<GameCanvas>();
-        gameCanvas.Initialize();
-
-        DrawingCanvas canvas = new DrawingCanvas()
-        {
-            Name = DrawingInfo.CreateCanvasName,
-        };
-
-        DrawingInfo.ED.CanvasDatas.Add(canvas);
-        DrawingInfo.CurrentCanvas = canvas;
+        DrawingInfo.CreateCanvas(gameCanvas);
 
         DrawingMode = E_DrawingMode.Edit;
     }
@@ -160,6 +143,9 @@ public class DrawingWindow : EditorWindow
         if (GUILayout.Button(EditorHelper.GetTrIcon("back", "뒤로 가기"), GUILayout.Width(40), GUILayout.Height(30)))
         {
             LayerInfo.Clear();
+            DrawingInfo.Clear();
+            GetPreviewCanvasList();
+
             DrawingMode = E_DrawingMode.Create;
         }
         GUILayout.FlexibleSpace();
@@ -170,24 +156,24 @@ public class DrawingWindow : EditorWindow
 
         if (GUILayout.Button("Save", GUILayout.Width(100), GUILayout.Height(30)))
         {
-            SaveCanvas();
+            Save();
         }
         GUILayout.EndHorizontal();
     }
-    private void SaveCanvas()
+    private void Save()
     {
-        var path = EditorUtility.SaveFilePanel("캔버스 저장", Application.streamingAssetsPath + "Canvas/", DrawingInfo.CurrentCanvas.Name + ".bin", "bin");
+        var path = EditorUtility.SaveFilePanel("캔버스 저장", Application.streamingAssetsPath + "Canvas/", DrawingInfo.CurrentCanvas.Name + ".txt", "txt");
         if (string.IsNullOrEmpty(path) == false)
         {
-            byte[] data = DrawingInfo.GameCanvas.Serialize();
+            DrawingInfo.CurrentCanvas.Snapshot = Snapshot.CaptureLayerSnapshot();
+            byte[] data = DrawingInfo.GameCanvas.Serialize(DrawingInfo.ED);
             File.WriteAllBytes(path, data);
             ShowNotification(new GUIContent("저장 성공!!"), 2);
         }
-
     }
-    private void LoadCanvas()
+    private void Load()
     {
-        var path = EditorUtility.OpenFilePanel("캔버스 불러오기", Application.dataPath, "bin");
+        var path = EditorUtility.OpenFilePanel("캔버스 불러오기", Application.dataPath, "textAsset");
 
         if (string.IsNullOrEmpty(path) == false)
         {
@@ -196,6 +182,28 @@ public class DrawingWindow : EditorWindow
             {
               //  targetGrid.Import(bytes, targetPalette);
             }
+        }
+    }
+
+    private void GetPreviewCanvasList()
+    {
+        TextAsset[] assets = Resources.LoadAll<TextAsset>("Canvas/");
+
+        foreach (TextAsset asset in assets)
+        {
+            byte[] bytes = asset.bytes;
+
+            GameCanvas gameCanvas = new GameObject("Canvas").AddComponent<GameCanvas>();
+            gameCanvas.Import(bytes, DrawingInfo.ED, LayerInfo.ED, true);
+            DestroyImmediate(gameCanvas);
+        }
+    }
+
+    private void DrawPreviewCanvasGUI()
+    {
+        for(int i = 0; i < DrawingInfo.ED.Canvases.Count; i++)
+        {
+            
         }
     }
 
@@ -334,8 +342,6 @@ public class DrawingWindow : EditorWindow
     }
     private void InputCanvasKeyCode() // 키 관련
     {
-        //Debug.Log(EditMode + " : "  + Event.current );
-
         if (Event.current.type != EventType.KeyDown)
             return;
 
@@ -363,7 +369,6 @@ public class DrawingWindow : EditorWindow
             Repaint();
             Event.current.Use();
         }
-
     }
     private void InputCanvasWheel() //휠 관련
     {

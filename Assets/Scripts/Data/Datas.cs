@@ -17,6 +17,7 @@ public class DrawingCanvas
 {
     public int Id;
     public string Name;
-
+    public Vector2Int Size; 
+    public Texture2D Snapshot;
 
 }

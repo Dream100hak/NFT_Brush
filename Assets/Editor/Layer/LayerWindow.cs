@@ -20,12 +20,14 @@ public class LayerWindow : EditorWindow
 
     private void OnEnable()
     {
+        LayerInfo.OnClear += LayerInfo.ClearHandler;
         Undo.undoRedoPerformed -= OnUndoRedoPerformed;
         Undo.undoRedoPerformed += OnUndoRedoPerformed;
         LayerInfo.ED.SelectedLayerIds.Clear();
     }
     private void OnDisable()
     {
+        LayerInfo.OnClear -= LayerInfo.ClearHandler;
         Undo.undoRedoPerformed -= OnUndoRedoPerformed;
     }
 
@@ -36,78 +38,6 @@ public class LayerWindow : EditorWindow
         Repaint();
     }
 
-    public Texture2D CaptureLayerSnapshot(GameLayer layer)
-    {
-        if (layer.HasChanged == false && layer.SnapShot != null)
-            return layer.SnapShot;
-
-        int width = 50;
-        int height = 50;
-
-        Camera tempCamera = new GameObject("TempCamera").AddComponent<Camera>();
-        Camera mainCamera = Camera.main;
-
-        tempCamera.transform.position = mainCamera.transform.position;
-        tempCamera.transform.rotation = mainCamera.transform.rotation;
-        tempCamera.orthographic = true;
-        tempCamera.orthographicSize = mainCamera.orthographicSize;
-        tempCamera.aspect = mainCamera.aspect;
-        tempCamera.clearFlags = CameraClearFlags.SolidColor;
-        tempCamera.backgroundColor = Color.clear;
-        tempCamera.cullingMask = mainCamera.cullingMask;
-
-        tempCamera.cullingMask = 1 << LayerMask.NameToLayer("Canvas");
-
-        Transform brushParent = DrawingInfo.GameCanvas.transform;
-        List<bool> layerStates = new List<bool>();
-        for (int i = 0; i < brushParent.childCount; i++)
-        {
-            Transform childLayer = brushParent.GetChild(i);
-
-            layerStates.Add(childLayer.gameObject.activeSelf);
-
-            if (childLayer != layer.transform)
-            {
-                childLayer.gameObject.SetActive(false);
-            }
-
-        }
-
-        RenderTexture renderTexture = new RenderTexture(width, height, 24);
-        GameObject gridQuad = GameObject.CreatePrimitive(PrimitiveType.Quad);
-        gridQuad.layer = LayerMask.NameToLayer("Canvas");
-        gridQuad.transform.position = new Vector3(0,0,10);
-        gridQuad.transform.rotation = tempCamera.transform.rotation;
-        gridQuad.transform.localScale = new Vector3(50, 50, 1.0f);
-
-        gridQuad.GetComponent<Renderer>().sharedMaterial = new Material(Shader.Find("Unlit/Transparent"));
-        gridQuad.GetComponent<Renderer>().sharedMaterial.mainTexture = Resources.Load<Texture2D>("Textures/Grid");
-        gridQuad.GetComponent<Renderer>().sharedMaterial.color = Color.gray;
-
-        tempCamera.targetTexture = renderTexture;
-        tempCamera.Render();
-
-        RenderTexture.active = renderTexture;
-        Texture2D snapshot = new Texture2D(width, height, TextureFormat.RGB24, false);
-        snapshot.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-        snapshot.Apply();
-
-        RenderTexture.active = null;
-        DestroyImmediate(tempCamera.gameObject);
-        DestroyImmediate(renderTexture);
-        DestroyImmediate(gridQuad);
-
-        for (int i = 0; i < brushParent.childCount; i++)
-        {
-            Transform childLayer = brushParent.GetChild(i);
-            childLayer.gameObject.SetActive(layerStates[i]);
-        }
-
-        layer.HasChanged = false;
-        layer.SnapShot = snapshot;
-
-        return snapshot;
-    }
     public void OnGUI()
     {
         DrawLayerListGUI();
@@ -181,7 +111,7 @@ public class LayerWindow : EditorWindow
     private void DrawLayerInfoGUI(GameLayer layer)
     {
         GUILayout.BeginHorizontal(EditorHelper.WhiteSkinBoxStyle());
-        Texture2D layerSnapshot = CaptureLayerSnapshot(layer); // ½º³À¼¦ °ü·Ã
+        Texture2D layerSnapshot = Snapshot.CaptureLayerSnapshot(DrawingInfo.GetGameCanvas(), layer); // ½º³À¼¦ °ü·Ã
         Rect imageRect = GUILayoutUtility.GetRect(50, 50);
         GUI.DrawTexture(imageRect, layerSnapshot, ScaleMode.ScaleToFit);
         DrawChangeLayerNameGUI(layer); // ÀÌ¸§ º¯°æ °ü·Ã
@@ -468,7 +398,7 @@ public class LayerWindow : EditorWindow
         Utils.ClearUndoRedo();
 
         LayerInfo.Clear();
-        DrawingInfo.GameCanvas.ClearLayers();
+        DrawingInfo.GameCanvas?.ClearLayers();
 
         GameLayer[] layersInScene = UnityEngine.Object.FindObjectsOfType<GameLayer>();
         foreach (GameLayer layerData in layersInScene)
@@ -560,7 +490,7 @@ public class LayerWindow : EditorWindow
     }
     private void DrawCreateNewLayerGUI()
     {
-        GUI.enabled = DrawingInfo.GameCanvas != null;
+        GUI.enabled = DrawingInfo.CurrentCanvas != null;
 
         if (GUILayout.Button(EditorHelper.GetTrIcon("Collab.FileAdded" , "·¹ÀÌ¾î »ý¼º"), GUILayout.Width(40), GUILayout.Height(40)))
         {

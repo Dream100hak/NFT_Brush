@@ -11,28 +11,19 @@ public class LayerInfo : InfoData<LayerInfoData>
     public static Dictionary<int, GameLayer> LayerObjects { get; set; } = new Dictionary<int, GameLayer>();
 
     [InitializeOnLoadMethod]
-    private static void Initialize()
-    {
-        EditorApplication.update += RunOnceOnEditorLoad;
-        EditorSceneManager.sceneOpened += OnSceneOpened;
-    }
-    private static void RunOnceOnEditorLoad()
-    {
-        OnClear += () =>
-        {
-            LayerObjects.Clear();
-            ToDeleteIds.Clear();
-            ToRestoreIds.Clear();
-            ED.SelectedLayerIds.Clear();
+    private static void Initialize() => EditorSceneManager.sceneOpened += OnSceneOpened;
 
-        };
-
-        InitializeLayers();
-        EditorApplication.update -= RunOnceOnEditorLoad;
-    }
     private static void OnSceneOpened(Scene scene, OpenSceneMode mode)
     {
-        InitializeLayers();
+        Clear();
+    }
+    public static void ClearHandler()
+    {
+        LayerObjects.Clear();
+        ED.SelectedLayerIds.Clear();
+        GameLayer[] layersInScene = UnityEngine.Object.FindObjectsOfType<GameLayer>();
+        foreach (GameLayer layerData in layersInScene)
+        UnityEngine.Object.DestroyImmediate(layerData.gameObject);
     }
     //씬 동기화 작업
     public static void InitializeLayers()
@@ -171,8 +162,6 @@ public class LayerInfo : InfoData<LayerInfoData>
             ED.SelectedLayerIds.Add(topLayerId);
             Selection.activeGameObject = remainingLayerObjects.First().Value.gameObject;
         }
-
- 
     }
 
     public static List<int> GetLayerIdList()

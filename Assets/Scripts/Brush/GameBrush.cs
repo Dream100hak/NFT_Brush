@@ -5,8 +5,11 @@ using static UnityEngine.GraphicsBuffer;
 
 public class GameBrush : MonoBehaviour
 {
+    [SerializeField]
     private int _id = -1; //고유 아이디
+    [SerializeField]
     private int _brushTypeId = -1; // 브러시 종류를 고르는 아이디
+    [SerializeField]
     private Color _color = Color.white;
 
     public int Id { get { return _id; } set { _id = value; }  }  

@@ -43,6 +43,7 @@ public class InfoData<T> where T : UnityEngine.Object, new()
             s_generateId++;
         }
     }
+
     public static int NewGenerateId<Comp>(Dictionary<int, Comp> dicDatas) where Comp : Component
     {
         int newLayerId;
@@ -83,6 +84,8 @@ public class InfoData<T> where T : UnityEngine.Object, new()
     {
         s_generateId = 0;
         s_emptyGenerateIds.Clear();
+        ToDeleteIds.Clear();
+        ToRestoreIds.Clear();
         OnClear?.Invoke();
     }
 
