@@ -82,10 +82,10 @@ public class GameLayer : MonoBehaviour
             _brushDics.Remove(id);
     }
 
-    public void Initialize(int newId , string newName)
+    public void Initialize(int newId, string newName, long timestamp = -1 )
     {
         Id = newId;
-        CreationTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        CreationTimestamp = timestamp == -1 ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() : timestamp;
         Name = newName;
         HasChanged = true;
     }

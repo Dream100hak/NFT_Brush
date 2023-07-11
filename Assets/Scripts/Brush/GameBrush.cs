@@ -50,4 +50,19 @@ public class GameBrush : MonoBehaviour
         material.color = ED.BrushColor;
         renderer.sharedMaterial = material;
     }
+    public void Initialize(DataBrush brush)
+    {
+        _id = brush.Id;
+        _brushTypeId = brush.TypeId;
+        _color = new Color(brush.R, brush.G, brush.B, brush.A);
+
+        gameObject.name = "Brush";
+        gameObject.layer = LayerMask.NameToLayer("Canvas");
+        transform.localScale = new Vector3(brush.ScaleX, brush.ScaleY, brush.ScaleZ);
+
+        Renderer renderer = GetComponent<Renderer>();
+        Material material = new Material(renderer.sharedMaterial);
+        material.color = _color;
+        renderer.sharedMaterial = material;
+    }
 }

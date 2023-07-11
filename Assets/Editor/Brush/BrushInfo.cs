@@ -2,25 +2,27 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-
-
 public class BrushInfo :  InfoData<BrushInfoData>
 {
-    public static Dictionary<int, GameBrush> brushObjects { get; set; } = new Dictionary<int, GameBrush>();
+    public static GameObject CurrentBrush { get => ED.SelectedBrushes[ED.GetSelectedBrushId()].TargetObj; }
 
-    public static GameObject CurrentBrush { get => ED.Brushes[ED.GetSelectedBrushId()].TargetObj; }
+    public static void ClearHandler()
+    {
+        ED.DataBrushes.Clear();
+        ED.BrushObjects.Clear();
+    }
 
     public static void DrawGridBrush(Vector2 slotSize)
     {
-        if (ED == null && ED.Brushes.Count == 0)
+        if (ED == null && ED.SelectedBrushes.Count == 0)
             return;
 
         int selectedBrushId = ED.GetSelectedBrushId();
         selectedBrushId = selectedBrushId == -1 ? 0 : selectedBrushId;
  
-        EditorHelper.DrawGridBrushItems( 5, ED.Brushes.Count, (idx) =>
+        EditorHelper.DrawGridBrushItems( 5, ED.SelectedBrushes.Count, (idx) =>
         {
-            bool selected = DrawGridBrushItems(slotSize, selectedBrushId == idx, ED.Brushes[idx]);
+            bool selected = DrawGridBrushItems(slotSize, selectedBrushId == idx, ED.SelectedBrushes[idx]);
 
             if (selected)
             {
@@ -28,9 +30,9 @@ public class BrushInfo :  InfoData<BrushInfoData>
             }
         });
 
-        ED.SetSelectedBrushId(selectedBrushId);
+        ED.SetSelectedBrushById(selectedBrushId);
     }
-    private static bool DrawGridBrushItems(Vector2 slotSize, bool isSelected, Brush item)
+    private static bool DrawGridBrushItems(Vector2 slotSize, bool isSelected, DrawingBrush item)
     {
         var area = GUILayoutUtility.GetRect(slotSize.x, slotSize.y, GUIStyle.none, GUILayout.MaxWidth(slotSize.x), GUILayout.MaxHeight(slotSize.y));
         item.Selected = Utils.EditPropertyWithUndo(item.Name, item.Selected, newSelected => item.Selected = newSelected, (label, value) => GUI.Button(area, label, EditorHelper.SelectedBrushButton(item.TargetObj, value)), ED);
@@ -48,39 +50,65 @@ public class BrushInfo :  InfoData<BrushInfoData>
 
     public static void PaintBrush(Vector3 position)
     {
-        Transform cubeParent = DrawingInfo.GameCanvas.transform;
-        var layerWindow = EditorWindow.GetWindow<LayerWindow>();
+        Transform gameCanvas = DrawingInfo.GameCanvas.transform;
 
-        if (LayerInfo.LayerObjects.Count == 0 || LayerInfo.ED.SelectedLayerIds.Any() == false)
+        if (LayerInfo.ED.LayerObjects.Count == 0 || LayerInfo.ED.SelectedLayerIds.Any() == false)
             return;
 
         foreach(int selectedLayerId in LayerInfo.ED.SelectedLayerIds)
         {
             GameObject brushObj = GameObject.Instantiate(CurrentBrush, position, Quaternion.identity) as GameObject;
-            GameLayer parentLayer = cubeParent.GetComponentsInChildren<GameLayer>().FirstOrDefault(t => t != null && t.Id == selectedLayerId);
+            GameLayer gameLayer = gameCanvas.GetComponentsInChildren<GameLayer>().FirstOrDefault(t => t != null && t.Id == selectedLayerId);
 
-            if (parentLayer == null)
+            if (gameLayer == null)
                 return;
 
-            int newBrushId = NewGenerateId(brushObjects);
+            int newBrushId = NewGenerateId(ED.BrushObjects);
 
-            brushObj.transform.SetParent(parentLayer.transform);
+            brushObj.transform.SetParent(gameLayer.transform);
             GameBrush newBrush = brushObj.GetOrAddComponent<GameBrush>();
             newBrush.Initialize(newBrushId, ED.GetSelectedBrushId(), ED, CurrentBrush);
 
-            brushObjects.Add(newBrushId, newBrush);
+            ED.BrushObjects.Add(newBrushId, newBrush);
 
-            parentLayer.HasChanged = true;
-            parentLayer.AddBrush(newBrush);
+            gameLayer.HasChanged = true;
+            gameLayer.AddBrush(newBrush);
 
             Undo.RegisterCreatedObjectUndo(brushObj, "Paint Brush");
         }
+    }
+    public static void PaintBrush(DataBrush brush)
+    {
+        Vector3 newPos = new Vector3(brush.PosX, brush.PosY, brush.PosZ);
+        GameObject selectedBrush = ED.SelectedBrushes[brush.TypeId].TargetObj;
 
+        GameObject brushObj = GameObject.Instantiate(selectedBrush, newPos, Quaternion.identity) as GameObject;
+        GameLayer gameLayer = LayerInfo.ED.LayerObjects[brush.ParentLayer];
+
+        if (gameLayer == null)
+            return;
+
+        brushObj.transform.SetParent(gameLayer.transform);
+        GameBrush newBrush = brushObj.GetOrAddComponent<GameBrush>();
+        newBrush.Initialize(brush);
+
+        ED.BrushObjects.Add(brush.Id, newBrush);
+
+        gameLayer.HasChanged = true;
+        gameLayer.AddBrush(newBrush);
+
+    }
+    public static void LoadBrush()
+    {
+        foreach(DataBrush brush in ED.DataBrushes)
+        {
+            PaintBrush(brush);
+        }
     }
 
     public static void RemoveBrush(RaycastHit hitInfo)
     {
-        if (LayerInfo.LayerObjects.Count == 0 || LayerInfo.ED.SelectedLayerIds.Any() == false)
+        if (LayerInfo.ED.LayerObjects.Count == 0 || LayerInfo.ED.SelectedLayerIds.Any() == false)
             return;
 
         if ( hitInfo.collider != null && hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Canvas"))

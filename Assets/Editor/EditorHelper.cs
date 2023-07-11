@@ -20,6 +20,55 @@ public class EditorHelper
         }
         GUILayout.EndHorizontal();
     }
+    public static Vector2 DrawGridPreviewCanvasItems(Vector2 scrollPos, int gapSpace, int itemCnt, float areaWidth, Vector2 slotSize, Action<int> onDrawer)
+    {
+        scrollPos = GUILayout.BeginScrollView(scrollPos , GUI.skin.window);
+        {
+            int horCnt = (int)(areaWidth / slotSize.x);
+            if (horCnt <= 0)
+            {
+                horCnt = 1;
+            }
+
+            int verCnt = itemCnt / horCnt;
+
+            if (itemCnt % horCnt > 0)
+            {
+                verCnt++;
+            }
+
+            if (verCnt <= 0)
+            {
+                verCnt = 1;
+            }
+
+            GUILayout.BeginVertical();
+            {
+                for (int i = 0; i < verCnt; i++)
+                {
+                    GUILayout.BeginHorizontal();
+                    {
+                        for (int j = 0; j < horCnt; j++)
+                        {
+                            int index = i * horCnt + j;
+                            if (index >= itemCnt)
+                            {
+                                break;
+                            }
+                            onDrawer(index);
+                            GUILayout.Space(gapSpace);
+                        }
+                    }
+                    GUILayout.EndHorizontal();
+                }
+            }
+            GUILayout.EndVertical();
+
+        }
+        GUILayout.EndScrollView();
+
+        return scrollPos;
+    }
 
     public static Rect GetRect(float width, float height , GUIStyle customStyle = null)
     {
@@ -108,6 +157,25 @@ public class EditorHelper
         GUILayout.Box("", style, GUILayout.ExpandWidth(expand), GUILayout.Height(height));
         GUI.color = originalColor;
  
+    }
+    public static void DrawCenterLabel(GUIContent content, Color color, int size, FontStyle style)
+    {
+        var guiStyle = new GUIStyle();
+        guiStyle.fontSize = size;
+        guiStyle.fontStyle = style;
+        guiStyle.normal.textColor = color;
+
+        guiStyle.padding.top = 10;
+        guiStyle.padding.bottom = 10;
+
+        GUILayout.BeginHorizontal();
+        {
+            GUILayout.FlexibleSpace();
+            GUILayout.Label(content, guiStyle);
+            GUILayout.FlexibleSpace();
+        }
+        GUILayout.EndHorizontal();
+
     }
 
     public static GUIContent GetIcon(string name)

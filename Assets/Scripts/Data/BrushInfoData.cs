@@ -6,8 +6,10 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "BrushInfoData", menuName = "BrushInfoData/Data", order = 1)]
 public class BrushInfoData : ScriptableObject
 {
+    public Dictionary<int, GameBrush> BrushObjects { get; set; } = new Dictionary<int, GameBrush>();
+    public List<DrawingBrush> SelectedBrushes;
 
-    public List<Brush> Brushes;
+    public List<DataBrush> DataBrushes;
 
     public float BrushSize = 0.5f;
     public float PlacementDistance  = 1.0f;
@@ -37,23 +39,23 @@ public class BrushInfoData : ScriptableObject
     public float SnowSpawn_SwayIntensity = 1.0f;
     public float SnowSpawn_SwayAmount = 0.1f;
 
-    public Brush GetBrush(int id)
+    public DrawingBrush GetSelectedBrushById(int id)
     {
-        return Brushes.Find(item => item.Id == id);
+        return SelectedBrushes.Find(item => item.Id == id);
     }
-    public void SetSelectedBrushId(int id)
+    public void SetSelectedBrushById(int id)
     {
-        foreach(Brush brush in Brushes)
+        foreach(DrawingBrush brush in SelectedBrushes)
         {
             brush.Selected = false;
         }
 
-        Brushes[id].Selected = true;
+        SelectedBrushes[id].Selected = true;
     }
 
     public int GetSelectedBrushId()
     {
-        return Brushes.FindIndex(item => item.Selected == true);
+        return SelectedBrushes.FindIndex(item => item.Selected == true);
     }
 
 }

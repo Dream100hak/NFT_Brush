@@ -86,16 +86,21 @@ public class DrawingWindow : EditorWindow
         EditorGUI.BeginChangeCheck();
         DrawingInfo.CreateCanvasName = EditorGUILayout.TextField("Name : ", DrawingInfo.CreateCanvasName);
 
-        if (EditorGUI.EndChangeCheck())
-            Repaint();
-  
         GUILayout.Space(10);
         GUI.enabled = !string.IsNullOrEmpty(DrawingInfo.CreateCanvasName);
 
         if (GUILayout.Button("캔버스 만들기", GUILayout.Height(100)))
         {
-            CreateCanvas();
+            if(DrawingInfo.IsNameDoubleCheck(DrawingInfo.CreateCanvasName))
+                ShowNotification(new GUIContent("이름이 중복 됨 : " + DrawingInfo.CreateCanvasName), 2);
+            else
+                CreateCanvas();
+
+            DrawingInfo.CreateCanvasName = EditorGUILayout.TextField("Name : ", string.Empty);
+            GUI.FocusControl(null);
         }
+        if (EditorGUI.EndChangeCheck())
+            Repaint();
 
         GUI.enabled = true;
     }
@@ -115,7 +120,6 @@ public class DrawingWindow : EditorWindow
        
         gameCanvas = new GameObject("Canvas").AddComponent<GameCanvas>();
         DrawingInfo.CreateCanvas(gameCanvas);
-
         DrawingMode = E_DrawingMode.Edit;
     }
     private void DrawEditCanvasGUI()
@@ -143,8 +147,10 @@ public class DrawingWindow : EditorWindow
         if (GUILayout.Button(EditorHelper.GetTrIcon("back", "뒤로 가기"), GUILayout.Width(40), GUILayout.Height(30)))
         {
             LayerInfo.Clear();
-            DrawingInfo.Clear();
             GetPreviewCanvasList();
+
+            DrawingInfo.CreateCanvasName = EditorGUILayout.TextField("Name : ", string.Empty);
+            GUI.FocusControl(null);
 
             DrawingMode = E_DrawingMode.Create;
         }
@@ -160,51 +166,94 @@ public class DrawingWindow : EditorWindow
         }
         GUILayout.EndHorizontal();
     }
-    private void Save()
-    {
-        var path = EditorUtility.SaveFilePanel("캔버스 저장", Application.streamingAssetsPath + "Canvas/", DrawingInfo.CurrentCanvas.Name + ".txt", "txt");
-        if (string.IsNullOrEmpty(path) == false)
-        {
-            DrawingInfo.CurrentCanvas.Snapshot = Snapshot.CaptureLayerSnapshot();
-            byte[] data = DrawingInfo.GameCanvas.Serialize(DrawingInfo.ED);
-            File.WriteAllBytes(path, data);
-            ShowNotification(new GUIContent("저장 성공!!"), 2);
-        }
-    }
-    private void Load()
-    {
-        var path = EditorUtility.OpenFilePanel("캔버스 불러오기", Application.dataPath, "textAsset");
 
-        if (string.IsNullOrEmpty(path) == false)
+    private void GetPreviewCanvasList()
+    {
+        DrawingInfo.Clear();
+
+        string path = Application.dataPath + "/Resources/Canvas/";
+        DirectoryInfo dir = new DirectoryInfo(path);
+        DrawingInfo.CanvasFileInfo = dir.GetFiles("*.bin");
+        foreach (FileInfo f in DrawingInfo.CanvasFileInfo)
         {
-            byte[] bytes = File.ReadAllBytes(path);
-            if (bytes != null)
+            byte[] bytes = File.ReadAllBytes(f.FullName);
+            if(bytes != null)
             {
-              //  targetGrid.Import(bytes, targetPalette);
+                GameCanvas gameCanvas = new GameObject("Canvas").AddComponent<GameCanvas>();
+                DataLoader.Import(ref gameCanvas , bytes, DrawingInfo.ED, LayerInfo.ED, BrushInfo.ED, true);
+                DrawingInfo.ED.CanvasObjects.Add(gameCanvas.Id, gameCanvas);
+                DestroyImmediate(gameCanvas.gameObject);     
             }
         }
     }
 
-    private void GetPreviewCanvasList()
-    {
-        TextAsset[] assets = Resources.LoadAll<TextAsset>("Canvas/");
-
-        foreach (TextAsset asset in assets)
-        {
-            byte[] bytes = asset.bytes;
-
-            GameCanvas gameCanvas = new GameObject("Canvas").AddComponent<GameCanvas>();
-            gameCanvas.Import(bytes, DrawingInfo.ED, LayerInfo.ED, true);
-            DestroyImmediate(gameCanvas);
-        }
-    }
+    private Vector2 _scrollPos;
 
     private void DrawPreviewCanvasGUI()
     {
-        for(int i = 0; i < DrawingInfo.ED.Canvases.Count; i++)
+        Vector2 previewSlotSize = new Vector2(100, 100);
+
+        if (DrawingInfo.ED.Canvases.Count == 0)
         {
-            
+            EditorHelper.DrawCenterLabel(new GUIContent("데이터 없음"), Color.white, 20, FontStyle.Bold);
+            return;
         }
+
+        _scrollPos = EditorHelper.DrawGridPreviewCanvasItems(_scrollPos, 10, DrawingInfo.ED.Canvases.Count, position.width, previewSlotSize, (id) =>
+        {
+             DrawPriviewCanvasItemGUI(previewSlotSize, DrawingInfo.ED.Canvases[id]);    
+        });
+    }
+    private void Save()
+    {
+        var path = EditorUtility.SaveFilePanel("캔버스 저장", Application.streamingAssetsPath + "Canvas/", DrawingInfo.CurrentCanvas.Name + ".bin", "bin");
+        if (string.IsNullOrEmpty(path) == false)
+        {
+            DrawingInfo.CurrentCanvas.Snapshot = Snapshot.CaptureLayerSnapshot();
+            byte[] data = DataLoader.Serialize(DrawingInfo.CurrentCanvas , DrawingInfo.ED, LayerInfo.ED , BrushInfo.ED);
+            File.WriteAllBytes(path, data);
+            ShowNotification(new GUIContent("저장 성공!!"), 2);
+        }
+    }
+    private void Load(DataCanvas canvas)
+    {
+        Debug.Log("Load : " + canvas.Name);
+        FileInfo file = DrawingInfo.GetPreviewCanvasFile(canvas.Name);
+        if (file == null)
+            return;
+
+        byte[] bytes = File.ReadAllBytes(file.FullName);
+
+        if (bytes != null)
+        {
+            LayerInfo.Clear();
+            BrushInfo.Clear();
+
+            GameCanvas gameCanvas = new GameObject("Canvas").AddComponent<GameCanvas>();
+            DataLoader.Import(ref gameCanvas, bytes, DrawingInfo.ED, LayerInfo.ED, BrushInfo.ED);
+
+            DrawingInfo.CreateCanvasName = canvas.Name;
+
+            DrawingInfo.LoadCanvas(gameCanvas);
+            LayerInfo.LoadLayer();
+            BrushInfo.LoadBrush();
+         
+            DrawingMode = E_DrawingMode.Edit;
+        }
+    }
+
+    private void DrawPriviewCanvasItemGUI(Vector2 slotSize, DataCanvas item)
+    {
+        var area = GUILayoutUtility.GetRect(slotSize.x, slotSize.y, GUIStyle.none, GUILayout.MaxWidth(slotSize.x), GUILayout.MaxHeight(slotSize.y));
+        Texture2D previewTex = item.Snapshot ?? Resources.Load<Texture2D>("Textures/Grid");
+ 
+        if(GUI.Button(area, previewTex))
+        {
+            Load(item);
+        }
+        //GUI.DrawTexture(area, previewTex);
+        GUI.Label(new Rect(area.center.x - 20, area.center.y + 10, 100, 50), item.Name);
+
     }
 
     private void DrawCanvasInfoGUI(Rect canvasRect)
@@ -212,7 +261,7 @@ public class DrawingWindow : EditorWindow
         GUILayout.BeginHorizontal(GUI.skin.box);
 
         int orthographicSize = (int)(_captureCam.orthographicSize / Camera.main.orthographicSize * 100);
-        EditorHelper.CanvasInfoLabel(DrawingInfo.CreateCanvasName + " : " + orthographicSize + "%", 200 , 20);
+        EditorHelper.CanvasInfoLabel(DrawingInfo.CurrentCanvas.Name + " : " + orthographicSize + "%", 200 , 20);
 
         string x = "X : ";
         string y = "Y : ";
@@ -243,9 +292,12 @@ public class DrawingWindow : EditorWindow
 
     private void DrawPaintBrushGUI(Rect canvasRect)
     {
-
         if (BrushInfo.CurrentBrush != null && LayerInfo.ED.SelectedLayerIds.Count == 0)
+        {
+            ShowNotification(new GUIContent("레이어를 선택하세요!!"), 0.1f);
             return;
+        }
+          
 
         if (EditMode != E_EditMode.Paint)
             return;
@@ -309,10 +361,9 @@ public class DrawingWindow : EditorWindow
                     Repaint();
                     e.Use();
 
-
                     Utils.AddUndo("Paint Brush", () =>
                     {
-                        var destroyedBrushes = BrushInfo.brushObjects.Where(x => x.Value == null).Select(x => x.Key).ToList();
+                        var destroyedBrushes = BrushInfo.ED.BrushObjects.Where(x => x.Value == null).Select(x => x.Key).ToList();
                         if (destroyedBrushes.Count > 0)
                         {
                             foreach (int id in destroyedBrushes)
@@ -337,8 +388,6 @@ public class DrawingWindow : EditorWindow
 
             }
         }
-
-      
     }
     private void InputCanvasKeyCode() // 키 관련
     {

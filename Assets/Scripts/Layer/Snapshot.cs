@@ -72,7 +72,7 @@ public class Snapshot
         gridQuad.layer = LayerMask.NameToLayer("Canvas");
         gridQuad.transform.position = new Vector3(0, 0, 10);
         gridQuad.transform.rotation = tempCamera.transform.rotation;
-        gridQuad.transform.localScale = new Vector3(50, 50, 1.0f);
+        gridQuad.transform.localScale = new Vector3(40, 40, 1.0f);
 
         gridQuad.GetComponent<Renderer>().sharedMaterial = new Material(Shader.Find("Unlit/Transparent"));
         gridQuad.GetComponent<Renderer>().sharedMaterial.mainTexture = Resources.Load<Texture2D>("Textures/Grid");

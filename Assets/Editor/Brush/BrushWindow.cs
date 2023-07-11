@@ -92,10 +92,12 @@ public class BrushWindow : EditorWindow
         Initialize();
         EditorSceneManager.sceneOpened -= OnSceneOpened;
         EditorSceneManager.sceneOpened += OnSceneOpened;
+        BrushInfo.OnClear += BrushInfo.ClearHandler;
     }
     private void OnDisable()
     {
         EditorSceneManager.sceneOpened -= OnSceneOpened;
+        BrushInfo.OnClear -= BrushInfo.ClearHandler;
     }
     public void DragHue()
     {
@@ -183,8 +185,8 @@ public class BrushWindow : EditorWindow
     public void OnGUI()
     {
 
-        BrushInfo.DeleteLayerIds(BrushInfo.brushObjects);
-        BrushInfo.RestoreLayerIds(BrushInfo.brushObjects);
+        BrushInfo.DeleteLayerIds(BrushInfo.ED.BrushObjects);
+        BrushInfo.RestoreLayerIds(BrushInfo.ED.BrushObjects);
 
         DrawTab();
 

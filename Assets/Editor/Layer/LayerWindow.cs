@@ -90,8 +90,8 @@ public class LayerWindow : EditorWindow
 
         RegisterDraggedLayer();
 
-        LayerInfo.DeleteLayerIds(LayerInfo.LayerObjects);
-        LayerInfo.RestoreLayerIds(LayerInfo.LayerObjects);
+        LayerInfo.DeleteLayerIds(LayerInfo.ED.LayerObjects);
+        LayerInfo.RestoreLayerIds(LayerInfo.ED.LayerObjects);
         GUILayout.EndScrollView();
         Repaint();
     }
@@ -347,7 +347,7 @@ public class LayerWindow : EditorWindow
     }
     private void ClearSelectedLayers()
     {
-        if (Event.current.type == EventType.MouseDown && LayerInfo.LayerObjects.Count > 0)
+        if (Event.current.type == EventType.MouseDown && LayerInfo.ED.LayerObjects.Count > 0)
         {
             List<int> prevSelectedLayerIds = new List<int>(LayerInfo.ED.SelectedLayerIds);
 
@@ -396,9 +396,7 @@ public class LayerWindow : EditorWindow
     {
         Undo.ClearAll();
         Utils.ClearUndoRedo();
-
         LayerInfo.Clear();
-        DrawingInfo.GameCanvas?.ClearLayers();
 
         GameLayer[] layersInScene = UnityEngine.Object.FindObjectsOfType<GameLayer>();
         foreach (GameLayer layerData in layersInScene)
@@ -430,11 +428,9 @@ public class LayerWindow : EditorWindow
         {
             foreach (int id in LayerInfo.ED.SelectedLayerIds)
             {
-                GameLayer layer = LayerInfo.LayerObjects[id];
+                GameLayer layer = LayerInfo.ED.LayerObjects[id];
                 LayerInfo.ToDeleteIds.Add(id);
                 LayerInfo.EmptyGenerateIds.Add(id);
-                DrawingInfo.GameCanvas.RemoveLayer(id);
-
                 Undo.DestroyObjectImmediate(layer.gameObject);
             }
 
@@ -445,7 +441,7 @@ public class LayerWindow : EditorWindow
             {
                 LayerInfo.ED.SelectedLayerIds.Clear();
                 var layers = LayerInfo.GetLayersHierarchy();
-                var createdLayers = layers.Keys.Except(LayerInfo.LayerObjects.Keys).ToList();
+                var createdLayers = layers.Keys.Except(LayerInfo.ED.LayerObjects.Keys).ToList();
                 if (createdLayers.Count > 0)
                 {
                     foreach (int id in createdLayers)
@@ -454,7 +450,6 @@ public class LayerWindow : EditorWindow
                         {
                             LayerInfo.ToRestoreIds.Add(id, layers[id]);
                             LayerInfo.ED.SelectedLayerIds.Add(id);
-                            DrawingInfo.GameCanvas.AddLayer(LayerInfo.LayerObjects[id]);
                         }
                           
                         LayerInfo.EmptyGenerateIds.Remove(id);
