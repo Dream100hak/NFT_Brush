@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
@@ -132,29 +133,6 @@ public class LayerInfo : InfoData<LayerInfoData>
         Selection.objects = selectedObjects;
     }
 
-    public static Dictionary<int, GameLayer> GetLayersHierarchy()
-    {
-        Transform cubeParent = DrawingInfo.GameCanvas.transform;
-        Dictionary<int, GameLayer> layers = new Dictionary<int, GameLayer>();
-
-        for (int i = 0; i < cubeParent.childCount; i++)
-        {
-            Transform childLayerTr = cubeParent.GetChild(i);
-            GameLayer childLayer = childLayerTr.GetComponent<GameLayer>();
-
-            int id = childLayerTr.GetComponent<GameLayer>().Id;
-            string name = childLayerTr.GetComponent<GameLayer>().Name;
-
-            if (!layers.ContainsKey(id))
-                layers.Add(id, childLayer);
-
-            childLayerTr.name = name;
-            childLayerTr.GetComponent<GameLayer>().HasChanged = true;
-        }
-
-        return layers;
-    }
-
     public static void SearchTopLayerId()
     {
         ED.SelectedLayerIds.Clear();
@@ -171,44 +149,28 @@ public class LayerInfo : InfoData<LayerInfoData>
         }
     }
 
-    public static List<int> GetLayerIdList()
+    public static List<TResult> GetHierarchyLayers<TResult>(Func<GameLayer, TResult> selector, Func<TResult, IComparable> sort, bool isDescending = false)
     {
-        return ED.LayerObjects
-            .Where(x => x.Value != null)
-            .Select(x => x.Key)
-            .ToList();
-    }
-    public static List<GameLayer> GetLayerList()
-    {
-        List<GameLayer> layerDatas = new List<GameLayer>();
-        foreach (var layerObj in ED.LayerObjects)
-        {
-            if (layerObj.Value == null)
-                continue;
-            layerDatas.Add(layerObj.Value.GetComponent<GameLayer>());
-        }
-        return layerDatas;
-    }
+        var results = new List<TResult>();
 
-    public static List<GameLayer> GetLayerOrders()
-    {
-        List<GameLayer> layerDatas = new List<GameLayer>();
+        if (DrawingInfo.GameCanvas == null)
+            return results;
 
-        Transform cubeParent = DrawingInfo.GameCanvas.transform;
-        foreach (Transform child in cubeParent)
+        foreach (Transform child in DrawingInfo.GameCanvas.transform)
         {
-            GameLayer layerData = child.GetComponent<GameLayer>();
-            if (layerData != null)
-                layerDatas.Add(layerData);
+            GameLayer gameLayer = child.GetComponent<GameLayer>();
+            if (gameLayer != null)
+                results.Add(selector(gameLayer));
         }
-        return layerDatas;
-    }
-    public static List<KeyValuePair<int, GameLayer>> GetSortedCreationTimeLayerList()
-    {
-        return ED.LayerObjects
-            .Where(x => x.Value != null)
-            .OrderByDescending(x => x.Value.CreationTimestamp)
-            .ToList();
-           
+
+        if (sort != null)
+        {
+            if (isDescending)
+                results.Sort((x, y) => sort(y).CompareTo(sort(x)));
+            else
+                results.Sort((x, y) => sort(x).CompareTo(sort(y)));
+        }
+
+        return results;
     }
 }

@@ -64,21 +64,18 @@ public class LayerWindow : EditorWindow
     {
         _clickedInsideLayer = false;
         _scrollPos = GUILayout.BeginScrollView(_scrollPos, false, true);
-        var sortedLayerList = LayerInfo.GetSortedCreationTimeLayerList();
+        var sortedLayerList = LayerInfo.ED.GetGameLayers(x => x.Value, x => x.CreationTimestamp , true);
 
-        foreach (var layerPair in sortedLayerList)
+        foreach (var layer in sortedLayerList)
         {
-            int i = layerPair.Key;
-            GameLayer layer = layerPair.Value;
-
             if (layer == null)
                 continue;
 
             Color originBackgroundColor = GUI.backgroundColor;
             GUI.backgroundColor = Color.clear;
-            DrawSelectedLayerGUI(i);
+            DrawSelectedLayerGUI(layer.Id);
             DrawLayerInfoGUI(layer);
-            DraggedInput(i, layer);
+            DraggedInput(layer.Id, layer);
             GUI.backgroundColor = originBackgroundColor;
 
             EditorHelper.DrawSeparatorHeightLine(-3, 1.7f, new Color(0.1f, 0.1f, 0.1f, 0.5f));
@@ -111,7 +108,7 @@ public class LayerWindow : EditorWindow
     private void DrawLayerInfoGUI(GameLayer layer)
     {
         GUILayout.BeginHorizontal(EditorHelper.WhiteSkinBoxStyle());
-        Texture2D layerSnapshot = Snapshot.CaptureLayerSnapshot(DrawingInfo.GetGameCanvas(), layer); // ½º³À¼¦ °ü·Ã
+        Texture2D layerSnapshot = Snapshot.CaptureLayerSnapshot(DrawingInfo.GameCanvas, layer); // ½º³À¼¦ °ü·Ã
         Rect imageRect = GUILayoutUtility.GetRect(50, 50);
         GUI.DrawTexture(imageRect, layerSnapshot, ScaleMode.ScaleToFit);
         DrawChangeLayerNameGUI(layer); // ÀÌ¸§ º¯°æ °ü·Ã
@@ -220,7 +217,7 @@ public class LayerWindow : EditorWindow
 
         if (LayerInfo.ED.SelectedLayerIds.Any())
         {
-            List<GameLayer> layerDatas = LayerInfo.GetLayerOrders();
+            List<GameLayer> layerDatas = LayerInfo.ED.GetGameLayers(x => x.Value , x => x.CreationTimestamp );
             int firstSelectedIndex = layerDatas.FindIndex(layerData => LayerInfo.ED.SelectedLayerIds.Contains(layerData.Id));
             int currentLayerIndex = layerDatas.FindIndex(layerData => layerData.Id == id);
             int startIndex = Math.Min(firstSelectedIndex, currentLayerIndex);
@@ -269,7 +266,7 @@ public class LayerWindow : EditorWindow
 
     private void RegisterDraggedLayer()
     {
-        List<GameLayer> layerDatas = LayerInfo.GetLayerList();
+        List<GameLayer> layerDatas = LayerInfo.GetHierarchyLayers( x => x, null);
 
         if (_isDragging && _currentDraggingLayer.Value != null)
         {
@@ -323,13 +320,13 @@ public class LayerWindow : EditorWindow
 
         Utils.AddUndo("Apply draggedLayer", () =>
         {
-            var layers = LayerInfo.GetLayersHierarchy();
+            var layers = LayerInfo.GetHierarchyLayers(x => x , null);
 
             foreach (var layer in layers)
             {
-                if (prevLayerIndexs.ContainsKey(layer.Key))
+                if (prevLayerIndexs.ContainsKey(layer.Id))
                 {
-                    layer.Value.transform.SetSiblingIndex(prevLayerIndexs[layer.Key]);
+                    layer.transform.SetSiblingIndex(prevLayerIndexs[layer.Id]);
                 }
             }
         });
@@ -440,19 +437,19 @@ public class LayerWindow : EditorWindow
             Utils.AddUndo("Delete selected layer" ,() =>
             {
                 LayerInfo.ED.SelectedLayerIds.Clear();
-                var layers = LayerInfo.GetLayersHierarchy();
-                var createdLayers = layers.Keys.Except(LayerInfo.ED.LayerObjects.Keys).ToList();
+                var layers = LayerInfo.GetHierarchyLayers(x => x, null);
+                var createdLayers = layers.Except(LayerInfo.ED.LayerObjects.Values).ToList();
                 if (createdLayers.Count > 0)
                 {
-                    foreach (int id in createdLayers)
+                    foreach (GameLayer layer in createdLayers)
                     {
-                        if (LayerInfo.ToRestoreIds.ContainsKey(id) == false)
+                        if (LayerInfo.ToRestoreIds.ContainsKey(layer.Id) == false)
                         {
-                            LayerInfo.ToRestoreIds.Add(id, layers[id]);
-                            LayerInfo.ED.SelectedLayerIds.Add(id);
+                            LayerInfo.ToRestoreIds.Add(layer.Id, layer);
+                            LayerInfo.ED.SelectedLayerIds.Add(layer.Id);
                         }
                           
-                        LayerInfo.EmptyGenerateIds.Remove(id);
+                        LayerInfo.EmptyGenerateIds.Remove(layer.Id);
                     }
                 }
             });

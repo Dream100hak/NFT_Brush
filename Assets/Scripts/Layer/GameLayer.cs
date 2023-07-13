@@ -12,7 +12,6 @@ public class GameLayer : MonoBehaviour
     public int Id { get => _id; set { _id = value; } }
     [SerializeField]
     private long _creationTimestamp = -1;
-
     public long CreationTimestamp { get => _creationTimestamp; set { _creationTimestamp = value; } }
 
     [SerializeField]
@@ -26,7 +25,6 @@ public class GameLayer : MonoBehaviour
                 _name = value;
                 gameObject.name = value;
             }
-           
         }
     }
     [SerializeField]
@@ -67,21 +65,7 @@ public class GameLayer : MonoBehaviour
             
         }
     }
-
-    private Dictionary<int, GameBrush> _brushDics = new Dictionary<int, GameBrush>();
-    public Dictionary<int, GameBrush> BrushDics { get => _brushDics; }
-
-
-    public void AddBrush(GameBrush brush)
-    {
-        _brushDics.Add(brush.Id, brush);
-    }
-    public void RemoveBrush(int id)
-    {
-        if(_brushDics.ContainsKey(id))
-            _brushDics.Remove(id);
-    }
-
+  
     public void Initialize(int newId, string newName, long timestamp = -1 )
     {
         Id = newId;
@@ -89,10 +73,11 @@ public class GameLayer : MonoBehaviour
         Name = newName;
         HasChanged = true;
     }
-
-    public void RemoveChildBrush()
+    public void Initialize(DataLayer layer)
     {
-
+        Id = layer.Id;
+        CreationTimestamp = layer.CreateTimestamp;
+        Name = layer.Name;
+        HasChanged = true;
     }
-
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
@@ -18,4 +19,25 @@ public class LayerInfoData : ScriptableObject
     {
         return Layers.Find(item => item.Id == id);
     }
+
+    public List<TResult> GetGameLayers<TResult>(Func<KeyValuePair<int, GameLayer>, TResult> selector, Func<TResult, IComparable> sort, bool isDescending = false)
+    {
+        var results = new List<TResult>();
+
+        foreach (var layerObject in LayerObjects)
+        {
+            if (layerObject.Value != null)
+                results.Add(selector(layerObject));
+        }
+
+        if (sort != null)
+        {
+            if (isDescending)
+                results.Sort((x, y) => sort(y).CompareTo(sort(x)));
+            else
+                results.Sort((x, y) => sort(x).CompareTo(sort(y)));
+        }
+        return results;
+    }
+
 }

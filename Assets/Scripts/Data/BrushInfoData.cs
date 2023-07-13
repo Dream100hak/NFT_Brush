@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 [Serializable]
@@ -39,10 +40,9 @@ public class BrushInfoData : ScriptableObject
     public float SnowSpawn_SwayIntensity = 1.0f;
     public float SnowSpawn_SwayAmount = 0.1f;
 
-    public DrawingBrush GetSelectedBrushById(int id)
-    {
-        return SelectedBrushes.Find(item => item.Id == id);
-    }
+    public DrawingBrush GetSelectedBrushById(int id) =>  SelectedBrushes.Find(item => item.Id == id);
+    public int GetSelectedBrushId() =>  SelectedBrushes.FindIndex(item => item.Selected == true);
+
     public void SetSelectedBrushById(int id)
     {
         foreach(DrawingBrush brush in SelectedBrushes)
@@ -53,9 +53,27 @@ public class BrushInfoData : ScriptableObject
         SelectedBrushes[id].Selected = true;
     }
 
-    public int GetSelectedBrushId()
+    public List<TResult> GetGameBrushes<TResult>(Func<KeyValuePair<int, GameBrush>, TResult> selector, Func<TResult, IComparable> sort, bool isDescending = false)
     {
-        return SelectedBrushes.FindIndex(item => item.Selected == true);
-    }
+        var results = new List<TResult>();
 
+        foreach (var brushObj in BrushObjects)
+        {
+            if (brushObj.Value != null)
+            {
+                var result = selector(brushObj);
+                if (result != null)
+                    results.Add(result);
+            }
+        }
+
+        if (sort != null)
+        {
+            if (isDescending)
+                results.Sort((x, y) => sort(y).CompareTo(sort(x)));
+            else
+                results.Sort((x, y) => sort(x).CompareTo(sort(y)));
+        }
+        return results;
+    }
 }

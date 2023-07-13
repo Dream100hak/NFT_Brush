@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Security.Cryptography;
 using UnityEngine;
 
 public class DataLoader 
@@ -40,22 +39,25 @@ public class DataLoader
                     writer.Write(layer.Key);
                     writer.Write(layer.Value.Name);
                     writer.Write(layer.Value.CreationTimestamp);
-                    writer.Write(layer.Value.BrushDics.Count);
+             
+                    List<GameBrush> brushes = BrushED.GetGameBrushes(x => (x.Value.ParentLayer == layer.Key) ? x.Value : null, null);
+                    writer.Write(brushes.Count);
+
                     //BRUSH
-                    foreach (var brush in layer.Value.BrushDics)
+                    foreach (var brush in brushes)
                     {
-                        writer.Write(brush.Key);
-                        writer.Write(brush.Value.BrushTypeId);
-                        writer.Write(brush.Value.Color.r);
-                        writer.Write(brush.Value.Color.g);
-                        writer.Write(brush.Value.Color.b);
-                        writer.Write(brush.Value.Color.a);
-                        writer.Write(brush.Value.transform.position.x);
-                        writer.Write(brush.Value.transform.position.y);
-                        writer.Write(brush.Value.transform.position.z);
-                        writer.Write(brush.Value.transform.localScale.x);
-                        writer.Write(brush.Value.transform.localScale.y);
-                        writer.Write(brush.Value.transform.localScale.z);
+                        writer.Write(brush.Id);
+                        writer.Write(brush.BrushTypeId);
+                        writer.Write(brush.Color.r);
+                        writer.Write(brush.Color.g);
+                        writer.Write(brush.Color.b);
+                        writer.Write(brush.Color.a);
+                        writer.Write(brush.transform.position.x);
+                        writer.Write(brush.transform.position.y);
+                        writer.Write(brush.transform.position.z);
+                        writer.Write(brush.transform.localScale.x);
+                        writer.Write(brush.transform.localScale.y);
+                        writer.Write(brush.transform.localScale.z);
                         writer.Write(layer.Key);
                     }
                 }

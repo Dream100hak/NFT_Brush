@@ -10,7 +10,7 @@ public class DrawingInfo : InfoData<DrawingInfoData>
 {
 
     public static DataCanvas CurrentCanvas { get; set; }
-    public static GameCanvas GameCanvas => GetGameCanvas();
+    public static GameCanvas GameCanvas => UnityEngine.Object.FindObjectOfType<GameCanvas>();
 
     public static string CreateCanvasName { get; set; }
 
@@ -37,6 +37,9 @@ public class DrawingInfo : InfoData<DrawingInfoData>
     {
         int newCanvasId = NewGenerateId<GameCanvas>(ED.CanvasObjects);
 
+        if (string.IsNullOrEmpty(CreateCanvasName))
+            CreateCanvasName = "제목 없음-" + newCanvasId;
+
         DataCanvas canvas = new DataCanvas()
         {
             Id = newCanvasId,
@@ -55,10 +58,6 @@ public class DrawingInfo : InfoData<DrawingInfoData>
         CurrentCanvas = ED.GetCanvasById(gameCanvas.Id);
     }
 
-    public static GameCanvas GetGameCanvas()
-    {
-        return UnityEngine.Object.FindObjectOfType<GameCanvas>();
-    }
     public static bool IsNameDoubleCheck(string name)
     {
         foreach(DataCanvas canvas in ED.Canvases)
@@ -78,4 +77,6 @@ public class DrawingInfo : InfoData<DrawingInfoData>
         }
         return null;
     }
+
+    
 }

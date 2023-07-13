@@ -177,7 +177,47 @@ public class EditorHelper
         GUILayout.EndHorizontal();
 
     }
+    public static GUIStyle DrawCreateCanvasButton()
+    {
+        GUIStyle style = new GUIStyle(GUI.skin.button);
+        style.normal.textColor = Color.white;
+        style.fontStyle = FontStyle.Bold;
+        style.normal.background = MakeColorTexture(2, 2, new Color(0.11f, 0.514f, 0.902f, 1));
+        style.border = new RectOffset(3, 3, 3, 3);
+        style.margin = new RectOffset(10, 10, 10, 10);
+        return style;
+    }
 
+    public static  Texture2D MakeColorTexture(int width, int height, Color color)
+    {
+        Color[] pix = new Color[width * height];
+        for (int i = 0; i < pix.Length; i++)
+            pix[i] = color;
+
+        Texture2D result = new Texture2D(width, height);
+        result.SetPixels(pix);
+        result.Apply();
+
+        return result;
+    }
+
+    public static GUIStyle NotSelectedLayerLabel()
+    {
+        GUIStyle style = new GUIStyle(GUI.skin.box);
+        style.font = Resources.Load<Font>("Fonts/The Jamsil 3 Regular");
+        style.alignment = TextAnchor.MiddleCenter;
+
+        return style;
+    }
+    public static GUIStyle PreviewCanvasLabel(Color color)
+    {
+        GUIStyle style = new GUIStyle(GUI.skin.label);
+        style.font = Resources.Load<Font>("Fonts/The Jamsil 3 Regular");
+        style.alignment = TextAnchor.MiddleCenter;
+        style.normal.textColor = color;
+
+        return style;
+    }
     public static GUIContent GetIcon(string name)
     {
         return EditorGUIUtility.IconContent(name);

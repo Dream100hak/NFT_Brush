@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -11,7 +12,6 @@ public class BrushInfo :  InfoData<BrushInfoData>
         ED.DataBrushes.Clear();
         ED.BrushObjects.Clear();
     }
-
     public static void DrawGridBrush(Vector2 slotSize)
     {
         if (ED == null && ED.SelectedBrushes.Count == 0)
@@ -67,12 +67,11 @@ public class BrushInfo :  InfoData<BrushInfoData>
 
             brushObj.transform.SetParent(gameLayer.transform);
             GameBrush newBrush = brushObj.GetOrAddComponent<GameBrush>();
-            newBrush.Initialize(newBrushId, ED.GetSelectedBrushId(), ED, CurrentBrush);
+            newBrush.Initialize(newBrushId, ED.GetSelectedBrushId(), gameLayer.Id , ED, CurrentBrush);
 
             ED.BrushObjects.Add(newBrushId, newBrush);
 
             gameLayer.HasChanged = true;
-            gameLayer.AddBrush(newBrush);
 
             Undo.RegisterCreatedObjectUndo(brushObj, "Paint Brush");
         }
@@ -95,7 +94,6 @@ public class BrushInfo :  InfoData<BrushInfoData>
         ED.BrushObjects.Add(brush.Id, newBrush);
 
         gameLayer.HasChanged = true;
-        gameLayer.AddBrush(newBrush);
 
     }
     public static void LoadBrush()
@@ -118,4 +116,5 @@ public class BrushInfo :  InfoData<BrushInfoData>
             cube.transform.parent.GetComponent<GameLayer>().HasChanged = true;
         }
     }
+
 }

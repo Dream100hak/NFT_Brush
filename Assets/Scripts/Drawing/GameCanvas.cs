@@ -40,7 +40,4 @@ public class GameCanvas : MonoBehaviour
             areaCol.size = new Vector3(300, 300, 0.2f);
         }
     }
-
-
-
 }

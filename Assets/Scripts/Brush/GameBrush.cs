@@ -11,18 +11,21 @@ public class GameBrush : MonoBehaviour
     private int _brushTypeId = -1; // 브러시 종류를 고르는 아이디
     [SerializeField]
     private Color _color = Color.white;
+    [SerializeField]
+    private int _parentLayer = -1; //레이어 아이디
 
     public int Id { get { return _id; } set { _id = value; }  }  
     public int BrushTypeId { get { return _brushTypeId; } set { _brushTypeId = value; }  }  
     public Color Color { get { return _color; } set { _color = value; }  }  
+    public int ParentLayer { get { return _parentLayer; } set { _parentLayer = value; }  }  
 
-
-    public void Initialize(int id , int brushTypeId, BrushInfoData ED , GameObject curBrush)
+    public void Initialize(int id , int brushTypeId, int parentLayer,  BrushInfoData ED , GameObject curBrush)
     {
         _id = id;
         _brushTypeId = brushTypeId;
         _color = ED.BrushColor;
-        
+        _parentLayer = parentLayer;
+
         gameObject.name = "Brush";
         gameObject.layer = LayerMask.NameToLayer("Canvas");    
         transform.localScale = Vector3.one * ED.BrushSize;
@@ -55,6 +58,7 @@ public class GameBrush : MonoBehaviour
         _id = brush.Id;
         _brushTypeId = brush.TypeId;
         _color = new Color(brush.R, brush.G, brush.B, brush.A);
+        _parentLayer = brush.ParentLayer;
 
         gameObject.name = "Brush";
         gameObject.layer = LayerMask.NameToLayer("Canvas");

@@ -3,7 +3,7 @@ using System.Linq;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
-using static UnityEngine.GraphicsBuffer;
+
 
 public class DrawingWindow : EditorWindow
 {
@@ -86,18 +86,30 @@ public class DrawingWindow : EditorWindow
         EditorGUI.BeginChangeCheck();
         DrawingInfo.CreateCanvasName = EditorGUILayout.TextField("Name : ", DrawingInfo.CreateCanvasName);
 
-        GUILayout.Space(10);
-        GUI.enabled = !string.IsNullOrEmpty(DrawingInfo.CreateCanvasName);
+        GUILayout.Space(5);
 
-        if (GUILayout.Button("캔버스 만들기", GUILayout.Height(100)))
+        GUI.enabled = false;
+        float width = EditorGUILayout.FloatField("Width : ", DrawingInfo.CreateCanvasSize.x);
+        GUILayout.Space(5);
+        float height = EditorGUILayout.FloatField("Height : ", DrawingInfo.CreateCanvasSize.y);
+        GUILayout.Space(5);
+        GUI.enabled = true;
+
+        DrawingInfo.CreateCanvasSize = new Vector2 (width, height);
+
+        if (GUILayout.Button("Create New Canvas", EditorHelper.DrawCreateCanvasButton(), GUILayout.Height(100)))
         {
             if(DrawingInfo.IsNameDoubleCheck(DrawingInfo.CreateCanvasName))
+            {
                 ShowNotification(new GUIContent("이름이 중복 됨 : " + DrawingInfo.CreateCanvasName), 2);
+                DrawingInfo.CreateCanvasName = EditorGUILayout.TextField("Name : ", string.Empty);
+            }
+         
             else
                 CreateCanvas();
 
-            DrawingInfo.CreateCanvasName = EditorGUILayout.TextField("Name : ", string.Empty);
             GUI.FocusControl(null);
+
         }
         if (EditorGUI.EndChangeCheck())
             Repaint();
@@ -138,6 +150,9 @@ public class DrawingWindow : EditorWindow
         InputCanvasWheel();
 
         DrawPaintBrushGUI(canvasRect);
+
+        DrawBrushInfoGUI(canvasRect);
+
         Repaint();
     }
     private void DrawTopButtonsGUI()
@@ -195,6 +210,7 @@ public class DrawingWindow : EditorWindow
 
         if (DrawingInfo.ED.Canvases.Count == 0)
         {
+            GUILayout.Space(10);
             EditorHelper.DrawCenterLabel(new GUIContent("데이터 없음"), Color.white, 20, FontStyle.Bold);
             return;
         }
@@ -203,6 +219,22 @@ public class DrawingWindow : EditorWindow
         {
              DrawPriviewCanvasItemGUI(previewSlotSize, DrawingInfo.ED.Canvases[id]);    
         });
+    }
+    
+    private void DrawPriviewCanvasItemGUI(Vector2 slotSize, DataCanvas item)
+    {
+        var area = GUILayoutUtility.GetRect(slotSize.x, slotSize.y, GUIStyle.none, GUILayout.MaxWidth(slotSize.x), GUILayout.MaxHeight(slotSize.y));
+        Texture2D previewTex = item.Snapshot ?? Resources.Load<Texture2D>("Textures/Grid");
+
+        if (GUI.Button(area, ""))
+        {
+            Load(item);
+        }
+        var textureRect = new Rect(area.x + area.width * 0.25f, area.y + area.height * 0.25f, area.width * 0.5f, area.height * 0.5f);
+        GUI.DrawTexture(textureRect, previewTex);
+
+        var labelRect = new Rect(area.x, area.y + area.height * 0.75f, area.width, area.height * 0.25f);
+        GUI.Label(labelRect, item.Name + ".bin", EditorHelper.PreviewCanvasLabel(Color.white));
     }
     private void Save()
     {
@@ -241,27 +273,12 @@ public class DrawingWindow : EditorWindow
             DrawingMode = E_DrawingMode.Edit;
         }
     }
-
-    private void DrawPriviewCanvasItemGUI(Vector2 slotSize, DataCanvas item)
-    {
-        var area = GUILayoutUtility.GetRect(slotSize.x, slotSize.y, GUIStyle.none, GUILayout.MaxWidth(slotSize.x), GUILayout.MaxHeight(slotSize.y));
-        Texture2D previewTex = item.Snapshot ?? Resources.Load<Texture2D>("Textures/Grid");
- 
-        if(GUI.Button(area, previewTex))
-        {
-            Load(item);
-        }
-        //GUI.DrawTexture(area, previewTex);
-        GUI.Label(new Rect(area.center.x - 20, area.center.y + 10, 100, 50), item.Name);
-
-    }
-
     private void DrawCanvasInfoGUI(Rect canvasRect)
     {
         GUILayout.BeginHorizontal(GUI.skin.box);
 
         int orthographicSize = (int)(_captureCam.orthographicSize / Camera.main.orthographicSize * 100);
-        EditorHelper.CanvasInfoLabel(DrawingInfo.CurrentCanvas.Name + " : " + orthographicSize + "%", 200 , 20);
+        EditorHelper.CanvasInfoLabel(DrawingInfo.CreateCanvasName + " : " + orthographicSize + "%", 200 , 20);
 
         string x = "X : ";
         string y = "Y : ";
@@ -294,11 +311,10 @@ public class DrawingWindow : EditorWindow
     {
         if (BrushInfo.CurrentBrush != null && LayerInfo.ED.SelectedLayerIds.Count == 0)
         {
-            ShowNotification(new GUIContent("레이어를 선택하세요!!"), 0.1f);
+            GUI.Label(new Rect(canvasRect.x , canvasRect.y + canvasRect.height , position.width ,50) , "레이어를 선택하세요 ▶" , EditorHelper.NotSelectedLayerLabel());
             return;
         }
           
-
         if (EditMode != E_EditMode.Paint)
             return;
 
@@ -389,6 +405,22 @@ public class DrawingWindow : EditorWindow
             }
         }
     }
+    bool _showBrush;
+    private void DrawBrushInfoGUI(Rect canvasRect)
+    {
+       
+     
+
+
+
+
+
+        foreach (int selectId in LayerInfo.ED.SelectedLayerIds)
+        {
+
+        }
+    }
+
     private void InputCanvasKeyCode() // 키 관련
     {
         if (Event.current.type != EventType.KeyDown)
