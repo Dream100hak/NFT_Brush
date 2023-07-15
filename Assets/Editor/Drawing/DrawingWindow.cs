@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Unity.VisualScripting;
@@ -45,20 +46,7 @@ public class DrawingWindow : EditorWindow
 
         _captureCam = cam.GetComponent<Camera>();
 
-        _captureCam.transform.position = Camera.main.transform.position;
-        _captureCam.transform.rotation = Camera.main.transform.rotation;
-        _captureCam.fieldOfView = Camera.main.fieldOfView;
-        _captureCam.nearClipPlane = Camera.main.nearClipPlane;
-        _captureCam.farClipPlane = Camera.main.farClipPlane;
-        _captureCam.orthographic = true;
-        _captureCam.orthographicSize = Camera.main.orthographicSize + 3f;
-        _captureCam.clearFlags = CameraClearFlags.SolidColor;
-        _captureCam.backgroundColor = Color.clear;
-        _captureCam.cullingMask = Camera.main.cullingMask;
-        _captureCam.depth = Camera.main.depth;
-
-        float aspectRatio = DrawingInfo.CreateCanvasSize.x / DrawingInfo.CreateCanvasSize.y;
-        _captureCam.aspect = (Camera.main.aspect != aspectRatio) ? aspectRatio : Camera.main.aspect;
+        Utils.CopyMainCameraComponent(ref _captureCam, DrawingInfo.CreateCanvasSize);
 
         _renderTex = new RenderTexture((int)DrawingInfo.CreateCanvasSize.x, (int)DrawingInfo.CreateCanvasSize.y, 24, RenderTextureFormat.ARGB32);
         _renderTex.Create();
@@ -145,13 +133,11 @@ public class DrawingWindow : EditorWindow
         DrawGridTextureGUI();
         GUI.DrawTexture(canvasRect, _renderTex, ScaleMode.ScaleToFit);
         DrawCameraBorderGUI(Color.black);
-
-        InputCanvasKeyCode();
-        InputCanvasWheel();
-
         DrawPaintBrushGUI(canvasRect);
-
         DrawBrushInfoGUI(canvasRect);
+
+        InputCanvasWheel(canvasRect);
+        InputCanvasKeyCode();
 
         Repaint();
     }
@@ -310,11 +296,8 @@ public class DrawingWindow : EditorWindow
     private void DrawPaintBrushGUI(Rect canvasRect)
     {
         if (BrushInfo.CurrentBrush != null && LayerInfo.ED.SelectedLayerIds.Count == 0)
-        {
-            GUI.Label(new Rect(canvasRect.x , canvasRect.y + canvasRect.height , position.width ,50) , "레이어를 선택하세요 ▶" , EditorHelper.NotSelectedLayerLabel());
             return;
-        }
-          
+
         if (EditMode != E_EditMode.Paint)
             return;
 
@@ -405,20 +388,64 @@ public class DrawingWindow : EditorWindow
             }
         }
     }
-    bool _showBrush;
+
+    Vector2 _brushScrollPos;
     private void DrawBrushInfoGUI(Rect canvasRect)
     {
-       
-     
+        if (LayerInfo.ED.SelectedLayerIds.Count == 0)
+        {
+            GUI.Label(new Rect(canvasRect.x, canvasRect.y + canvasRect.height, position.width, 50), "레이어를 선택하세요", EditorHelper.NotSelectedLayerLabel());
+            return;
+        }
 
+        var area = new Rect(s_areaX, canvasRect.y + canvasRect.height, position.width, position.height / 2);
 
+        float elementHeight = 15;
+        float offsetY = 0;
+        float currentY = offsetY; 
+        float contentHeight = 0;
 
+        foreach (int selectId in LayerInfo.ED.SelectedLayerIds)
+        {
+            foreach (var brush in BrushInfo.ED.BrushObjects)
+            {
+                if (brush.Value == null || brush.Value.ParentLayer != selectId)
+                    continue;
+
+                contentHeight += elementHeight + offsetY; 
+            }
+        }
+
+        Rect contentRect = new Rect(0, 0, area.width, contentHeight);
+
+        _brushScrollPos = GUI.BeginScrollView(area, _brushScrollPos, contentRect, false, true);
+
+        GUIStyle buttonStyle = new GUIStyle(); // 기본 GUIStyle 생성
+        buttonStyle.normal.background = null; // 배경 제거
 
 
         foreach (int selectId in LayerInfo.ED.SelectedLayerIds)
         {
+            foreach (var brush in BrushInfo.ED.BrushObjects)
+            {
+                if (brush.Value == null || brush.Value.ParentLayer != selectId)
+                    continue;
 
+   
+                Rect labelRect = new Rect(s_areaX + 5, currentY, area.width, elementHeight);
+                Color origin = GUI.color;
+                if (GUI.Button(labelRect, new GUIContent(), EditorHelper.PaintBrushInfoBox(brush.Value.IsSelected)))
+                {
+                    brush.Value.IsSelected = !brush.Value.IsSelected;
+                }
+                GUI.color = origin;
+                GUI.Label(labelRect, new GUIContent("Brush " + brush.Value.Id.ToString("D3")));
+                currentY += elementHeight + offsetY;
+            }
         }
+
+        GUI.EndScrollView();
+        Repaint();
     }
 
     private void InputCanvasKeyCode() // 키 관련
@@ -451,17 +478,19 @@ public class DrawingWindow : EditorWindow
             Event.current.Use();
         }
     }
-    private void InputCanvasWheel() //휠 관련
+    private void InputCanvasWheel(Rect canvasRect) //휠 관련
     {
         Event e = Event.current;
         
          if (e.type == EventType.ScrollWheel)
-        {
-            float scrollDelta = e.delta.y;
-            float newOrthographicSize = Mathf.Min(_captureCam.orthographicSize + scrollDelta, 50);
+        {     
+            if(canvasRect.Contains(e.mousePosition))
+            {
+                float scrollDelta = e.delta.y;
+                float newOrthographicSize = Mathf.Min(_captureCam.orthographicSize + scrollDelta, 50);
 
-            _captureCam.orthographicSize = Mathf.Max(newOrthographicSize, Camera.main.orthographicSize);
-
+                _captureCam.orthographicSize = Mathf.Max(newOrthographicSize, Camera.main.orthographicSize);
+            }
             e.Use();
         }
     }

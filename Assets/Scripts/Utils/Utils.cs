@@ -100,7 +100,23 @@ public static class Utils
     {
         return go.GetComponent<T>() ?? go.AddComponent<T>();
     }
+    public static void CopyMainCameraComponent(ref Camera cam,  Vector2 size)
+    {
+        cam.transform.position = Camera.main.transform.position;
+        cam.transform.rotation = Camera.main.transform.rotation;
+        cam.fieldOfView = Camera.main.fieldOfView;
+        cam.nearClipPlane = Camera.main.nearClipPlane;
+        cam.farClipPlane = Camera.main.farClipPlane;
+        cam.orthographic = true;
+        cam.orthographicSize = Camera.main.orthographicSize + 3f;
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.backgroundColor = Color.clear;
+        cam.cullingMask = Camera.main.cullingMask;
+        cam.depth = Camera.main.depth;
 
+        float aspectRatio = size.x / size.y;
+        cam.aspect = (Camera.main.aspect != aspectRatio) ? aspectRatio : Camera.main.aspect;
+    }
 #endif
     public static Vector3 SetZVectorZero(Vector3 vec)
     {

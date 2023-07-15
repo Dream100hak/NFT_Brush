@@ -9,7 +9,15 @@ public class EditorHelper
 {
     public static Color Gray01 = new Color32(100, 100, 100, 255);
     public static Color Sky = new Color32(51, 243, 255, 255);
+    public static Color Orange = new Color32(255, 165, 0, 255);
+    public static Color Brown = new Color32(89, 54, 45, 255);
+
 #if UNITY_EDITOR
+
+    public static Color RGB255To1(Color32 color32) =>  new Color(color32.r / 255f, color32.g / 255f, color32.b / 255f, color32.a / 255f);
+    public static Color32 RGB1To255(Color color) =>  new Color32((byte)(color.r * 255f), (byte)(color.g * 255f), (byte)(color.b * 255f), (byte)(color.a * 255f));
+
+
     public static void DrawGridBrushItems(int space, int itemCnt, Action<int> onDrawer)
     {
         GUILayout.BeginHorizontal();
@@ -216,6 +224,17 @@ public class EditorHelper
         style.alignment = TextAnchor.MiddleCenter;
         style.normal.textColor = color;
 
+        return style;
+    }
+    public static GUIStyle PaintBrushInfoBox(bool isSelected)
+    {
+        GUIStyle style = new GUIStyle(GUI.skin.box);
+        if (isSelected)
+        {
+            style = new GUIStyle(GUI.skin.button);
+            style.normal.background = MakeColorTexture(2, 2, Brown);
+        }
+       
         return style;
     }
     public static GUIContent GetIcon(string name)

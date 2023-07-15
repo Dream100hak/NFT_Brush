@@ -394,6 +394,7 @@ public class LayerWindow : EditorWindow
         Undo.ClearAll();
         Utils.ClearUndoRedo();
         LayerInfo.Clear();
+        BrushInfo.Clear();
 
         GameLayer[] layersInScene = UnityEngine.Object.FindObjectsOfType<GameLayer>();
         foreach (GameLayer layerData in layersInScene)
