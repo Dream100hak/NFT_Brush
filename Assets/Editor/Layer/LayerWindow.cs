@@ -33,6 +33,11 @@ public class LayerWindow : EditorWindow
 
     private void OnUndoRedoPerformed()
     {
+        if (focusedWindow != this)
+            return;
+
+        Debug.Log("LayerWIndow : " + focusedWindow);
+
         Utils.UndoExecute();
         LayerInfo.SetLayerHasChanged();
         Repaint();
@@ -154,6 +159,8 @@ public class LayerWindow : EditorWindow
             _currentDraggingLayer = new KeyValuePair<int, GameLayer>(id, layer);
             _dragStartTime = DateTime.Now;
             _clickedInsideLayer = true;
+
+            BrushInfo.ClearAllSelectedBrush();
 
             if (Event.current.shift)
                 InpuLayerIdByShift(id);

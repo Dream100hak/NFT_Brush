@@ -211,7 +211,7 @@ public class BrushWindow : EditorWindow
 
         GUILayout.Space(20);
         Rect sliderRect = EditorHelper.GetRect(300, EditorGUIUtility.singleLineHeight);
-        BrushInfo.ED.BrushSize = Utils.EditPropertyWithUndo("크기", BrushInfo.ED.BrushSize, newSize => BrushInfo.ED.BrushSize = newSize, (label, value) => GUI.HorizontalSlider(sliderRect, value, 0.1f, 1f), BrushInfo.ED);
+        BrushInfo.ED.BrushSize = Utils.EditPropertyWithUndo("크기", BrushInfo.ED.BrushSize, newSize => BrushInfo.ED.BrushSize = newSize, (label, value) => GUI.HorizontalSlider(sliderRect, value, 1f, 10f), BrushInfo.ED);
 
         EditorGUILayout.EndVertical();
         EditorGUILayout.EndHorizontal();
@@ -239,7 +239,7 @@ public class BrushWindow : EditorWindow
 
         GUILayout.Space(20);
         Rect sliderRect = EditorHelper.GetRect(300, EditorGUIUtility.singleLineHeight);
-        BrushInfo.ED.PlacementDistance = Utils.EditPropertyWithUndo("간격", BrushInfo.ED.PlacementDistance , newDistance => BrushInfo.ED.PlacementDistance = newDistance, (label, value) => GUI.HorizontalSlider(sliderRect, value, 0.1f, 1f), BrushInfo.ED);
+        BrushInfo.ED.PlacementDistance = Utils.EditPropertyWithUndo("간격", BrushInfo.ED.PlacementDistance , newDistance => BrushInfo.ED.PlacementDistance = newDistance, (label, value) => GUI.HorizontalSlider(sliderRect, value, 0.5f, 1f), BrushInfo.ED);
 
         EditorGUILayout.EndVertical();
 

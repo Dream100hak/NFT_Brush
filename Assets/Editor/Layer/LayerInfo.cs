@@ -52,23 +52,27 @@ public class LayerInfo : InfoData<LayerInfoData>
 
         SearchTopLayerId();
 
-        Utils.AddUndo("Create Layer" , () =>
+        // Load로 불러온 레이어는 Undo 제외
+        if(timestamp == -1)
         {
-            var destroyedLayers = ED.LayerObjects.Where(x => x.Value == null).Select(x => x.Key).ToList();
-            if (destroyedLayers.Count > 0)
+            Utils.AddUndo("Create Layer", () =>
             {
-                foreach (int id in destroyedLayers)
+                var destroyedLayers = ED.LayerObjects.Where(x => x.Value == null).Select(x => x.Key).ToList();
+                if (destroyedLayers.Count > 0)
                 {
-                    ToDeleteIds.Add(id);
-                    EmptyGenerateIds.Add(id);
+                    foreach (int id in destroyedLayers)
+                    {
+                        ToDeleteIds.Add(id);
+                        EmptyGenerateIds.Add(id);
+                    }
                 }
-            }
 
-            if (ED.SelectedLayerIds.Contains(newLayerId))
-                ED.SelectedLayerIds.Remove(newLayerId);
+                if (ED.SelectedLayerIds.Contains(newLayerId))
+                    ED.SelectedLayerIds.Remove(newLayerId);
 
-            SearchTopLayerId();
-        }  );
+                SearchTopLayerId();
+            });
+        }  
     }
 
     public static void CreateNewLayer()

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using static UnityEngine.RuleTile.TilingRuleOutput;
 
 public class GameBrush : MonoBehaviour
 {
@@ -16,11 +17,8 @@ public class GameBrush : MonoBehaviour
     [SerializeField]
     private bool _isSelected = false;
 
-    [SerializeField]
-    private float _outlineScale = -1.2f;
-    [SerializeField]
-    private Color _outlineColor = Color.green;
-    private Renderer _outlineRenderer;
+    Material _defaultMat;
+    Material _outlineMat;
 
     public int Id { get { return _id; } set { _id = value; }  }  
     public int BrushTypeId { get { return _brushTypeId; } set { _brushTypeId = value; }  }  
@@ -30,11 +28,18 @@ public class GameBrush : MonoBehaviour
         set 
         {
             _isSelected = value;
-
-            if(_outlineRenderer == null)
-                _outlineRenderer = CreateOutline();
-            
-            _outlineRenderer.enabled = value;
+            Material[] materials = new Material[2];
+            if (_isSelected)
+            {
+                materials[0] = _defaultMat;
+                materials[1] = _outlineMat;
+            }
+            else
+            {
+                materials[0] = _defaultMat;
+            }
+ 
+            CreateOutline(materials);
         }  
     }
 
@@ -72,6 +77,9 @@ public class GameBrush : MonoBehaviour
         Material material = new Material(renderer.sharedMaterial);
         material.color = ED.BrushColor;
         renderer.sharedMaterial = material;
+
+        _defaultMat = renderer.sharedMaterial;
+        _outlineMat = Resources.Load<Material>("Materials/Outline");
     }
     public void Initialize(DataBrush brush)
     {
@@ -88,22 +96,15 @@ public class GameBrush : MonoBehaviour
         Material material = new Material(renderer.sharedMaterial);
         material.color = _color;
         renderer.sharedMaterial = material;
+
+        _defaultMat = renderer.sharedMaterial;
+        _outlineMat = Resources.Load<Material>("Materials/Outline");
     }
 
-    public Renderer CreateOutline()
+    private void CreateOutline(Material[] materials)
     {
-        GameObject outlineGo = Instantiate(this.gameObject, transform.position, transform.rotation, transform);
-        Renderer renderer = outlineGo.GetComponent<Renderer>();
-
-        renderer.sharedMaterial = Resources.Load<Material>("Materials/Outline") ;
-        renderer.sharedMaterial.SetColor("_OutlineColor", _outlineColor);
-        renderer.sharedMaterial.SetFloat("_Scale", _outlineScale);
-        renderer.shadowCastingMode = ShadowCastingMode.Off;
-
-        outlineGo.GetComponent<Collider>().enabled = false;
-
-        renderer.enabled = false;
-
-        return renderer;
+        Renderer renderer = GetComponent<Renderer>();
+        renderer.materials = materials;
     }
+
 }

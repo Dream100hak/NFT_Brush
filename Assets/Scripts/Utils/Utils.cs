@@ -45,7 +45,6 @@ public static class Utils
             Debug.Log("Redo : " + eventName);
         }
     }
-
     public static void AddUndo(string eventName, Action action)
     {
         Debug.Log("<color=orange>Undo Add :</color> " + eventName);
@@ -117,6 +116,9 @@ public static class Utils
         float aspectRatio = size.x / size.y;
         cam.aspect = (Camera.main.aspect != aspectRatio) ? aspectRatio : Camera.main.aspect;
     }
+
+
+
 #endif
     public static Vector3 SetZVectorZero(Vector3 vec)
     {

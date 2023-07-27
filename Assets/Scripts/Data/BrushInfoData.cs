@@ -8,11 +8,13 @@ using UnityEngine;
 public class BrushInfoData : ScriptableObject
 {
     public Dictionary<int, GameBrush> BrushObjects { get; set; } = new Dictionary<int, GameBrush>();
-    public List<DrawingBrush> SelectedBrushes;
+    public List<DrawingBrush> TypeBrushes;
 
     public List<DataBrush> DataBrushes;
 
-    public float BrushSize = 0.5f;
+    [Range(1f, 10f)]
+    public float BrushSize = 1f;
+    [Range(0.5f, 1f)]
     public float PlacementDistance  = 1.0f;
 
     public Color BrushColor = Color.white;
@@ -40,17 +42,17 @@ public class BrushInfoData : ScriptableObject
     public float SnowSpawn_SwayIntensity = 1.0f;
     public float SnowSpawn_SwayAmount = 0.1f;
 
-    public DrawingBrush GetSelectedBrushById(int id) =>  SelectedBrushes.Find(item => item.Id == id);
-    public int GetSelectedBrushId() =>  SelectedBrushes.FindIndex(item => item.Selected == true);
+    public DrawingBrush GetTypeBrushById(int id) =>  TypeBrushes.Find(item => item.Id == id);
+    public int GetTypeBrushId() =>  TypeBrushes.FindIndex(item => item.Selected == true);
 
-    public void SetSelectedBrushById(int id)
+    public void SetTypeBrushById(int id)
     {
-        foreach(DrawingBrush brush in SelectedBrushes)
+        foreach(DrawingBrush brush in TypeBrushes)
         {
             brush.Selected = false;
         }
 
-        SelectedBrushes[id].Selected = true;
+        TypeBrushes[id].Selected = true;
     }
 
     public List<TResult> GetGameBrushes<TResult>(Func<KeyValuePair<int, GameBrush>, TResult> selector, Func<TResult, IComparable> sort, bool isDescending = false)

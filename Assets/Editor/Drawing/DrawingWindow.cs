@@ -1,10 +1,10 @@
+using NUnit;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
-
 
 public class DrawingWindow : EditorWindow
 {
@@ -29,6 +29,8 @@ public class DrawingWindow : EditorWindow
 
     private void OnEnable()
     {
+        Undo.undoRedoPerformed -= OnUndoRedoPerformed;
+        Undo.undoRedoPerformed += OnUndoRedoPerformed;
         DrawingInfo.OnClear += DrawingInfo.ClearHandler;
         _editGUIContents = new GUIContent[] { EditorHelper.GetTrIcon("ViewToolMove", "옮기기"), EditorHelper.GetTrIcon("Grid.BoxTool", "선택"), EditorHelper.GetTrIcon("Grid.PaintTool", "그리기"), EditorHelper.GetTrIcon("Grid.EraserTool", "지우기") };
         InitializeCaptureCamera();
@@ -37,6 +39,14 @@ public class DrawingWindow : EditorWindow
     private void OnDisable()
     {
         DrawingInfo.OnClear -= DrawingInfo.ClearHandler;
+    }
+    private void OnUndoRedoPerformed()
+    {
+        if (focusedWindow != this)
+            return;
+
+        Utils.UndoExecute();
+        Repaint();
     }
     private void InitializeCaptureCamera()
     {
@@ -135,7 +145,9 @@ public class DrawingWindow : EditorWindow
         DrawCameraBorderGUI(Color.black);
         DrawPaintBrushGUI(canvasRect);
         DrawBrushInfoGUI(canvasRect);
-
+        DrawSelectBrushGUI(canvasRect);
+        DrawScreenRectBorder(EditorHelper.Sky);
+        
         InputCanvasWheel(canvasRect);
         InputCanvasKeyCode();
 
@@ -301,6 +313,8 @@ public class DrawingWindow : EditorWindow
         if (EditMode != E_EditMode.Paint)
             return;
 
+    
+
         Event e = Event.current;
         Vector2 mousePos = e.mousePosition;
 
@@ -333,6 +347,7 @@ public class DrawingWindow : EditorWindow
                         BrushInfo.PaintBrush(Utils.SetZVectorZero(hitInfo.point));
                     }
 
+
                     Repaint();
                     e.Use();
 
@@ -340,6 +355,7 @@ public class DrawingWindow : EditorWindow
 
                 else if (e.type == EventType.MouseUp && e.button == 0)
                 {
+
                     if (e.shift && _initialMousePos != Vector3.zero)
                     {
                         Vector3 direction = (hitInfo.point - _initialMousePos).normalized;
@@ -381,6 +397,7 @@ public class DrawingWindow : EditorWindow
                         _lastPlacedPos = hitInfo.point;
                     }
 
+
                     Repaint();
                     e.Use();
                 }
@@ -390,6 +407,7 @@ public class DrawingWindow : EditorWindow
     }
 
     Vector2 _brushScrollPos;
+
     private void DrawBrushInfoGUI(Rect canvasRect)
     {
         if (LayerInfo.ED.SelectedLayerIds.Count == 0)
@@ -417,12 +435,7 @@ public class DrawingWindow : EditorWindow
         }
 
         Rect contentRect = new Rect(0, 0, area.width, contentHeight);
-
         _brushScrollPos = GUI.BeginScrollView(area, _brushScrollPos, contentRect, false, true);
-
-        GUIStyle buttonStyle = new GUIStyle(); // 기본 GUIStyle 생성
-        buttonStyle.normal.background = null; // 배경 제거
-
 
         foreach (int selectId in LayerInfo.ED.SelectedLayerIds)
         {
@@ -431,12 +444,14 @@ public class DrawingWindow : EditorWindow
                 if (brush.Value == null || brush.Value.ParentLayer != selectId)
                     continue;
 
-   
                 Rect labelRect = new Rect(s_areaX + 5, currentY, area.width, elementHeight);
                 Color origin = GUI.color;
                 if (GUI.Button(labelRect, new GUIContent(), EditorHelper.PaintBrushInfoBox(brush.Value.IsSelected)))
                 {
                     brush.Value.IsSelected = !brush.Value.IsSelected;
+                    Undo.RegisterCompleteObjectUndo(brush.Value, "Select Brush");
+                    Utils.AddUndo("Select Brush", () => { brush.Value.IsSelected = !brush.Value.IsSelected; });
+    
                 }
                 GUI.color = origin;
                 GUI.Label(labelRect, new GUIContent("Brush " + brush.Value.Id.ToString("D3")));
@@ -448,6 +463,81 @@ public class DrawingWindow : EditorWindow
         Repaint();
     }
 
+    private Vector2 _selectionStart;
+    private Vector2 _selectionEnd;
+    private bool _isDragging;
+    private void DrawSelectBrushGUI(Rect canvasRect)
+    {
+        if (_editMode != E_EditMode.Select)
+            return;
+
+        Event e = Event.current;
+        Vector2 mousePos = e.mousePosition;
+        Rect newRect = new Rect(canvasRect.x, canvasRect.y, position.width, canvasRect.height);
+
+        if (newRect.Contains(mousePos))
+        {
+            if (e.type == EventType.MouseDown && e.button == 0)
+            {
+                _isDragging = true;
+                _selectionStart = _selectionEnd =  mousePos;
+
+            }
+            if (e.type == EventType.MouseDrag && _isDragging)
+                _selectionEnd = mousePos;
+        }
+
+        if (e.type == EventType.MouseUp && _isDragging)
+        {
+
+            _isDragging = false;
+            var draggedRect = EditorHelper.GetDraggedRect(_selectionStart, _selectionEnd);
+            draggedRect.y += (canvasRect.y + position.y );
+
+            List<int> selectedBrushesId = new List<int>();
+
+            foreach (var brush  in BrushInfo.ED.BrushObjects)
+            {
+                Vector3 brushWorldPos = brush.Value.transform.position;
+                Vector3 brushScreenPos = _captureCam.WorldToScreenPoint(brushWorldPos);
+               
+                brushScreenPos.y = (position.height - brushScreenPos.y) - canvasRect.y; // Y 좌표 반전
+
+                Vector2 screenPos2D = new Vector2(brushScreenPos.x, brushScreenPos.y);
+          
+                if (draggedRect.Contains(screenPos2D)) 
+                {
+                    brush.Value.IsSelected = true;
+                    selectedBrushesId.Add(brush.Key);
+                    Undo.RegisterCompleteObjectUndo(brush.Value, "Select Dragged Brush");
+                }    
+            }
+
+            if(selectedBrushesId.Count > 0)
+            {
+                Utils.AddUndo("Select Dragged Brush", () =>
+                {
+                    if (selectedBrushesId.Count > 0)
+                    {
+                        foreach (int id in selectedBrushesId)
+                        {
+                            BrushInfo.ED.BrushObjects[id].IsSelected = false;
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    void DrawScreenRectBorder(Color color)
+    {
+        if(_isDragging)
+        {
+            var draggedRect = EditorHelper.GetDraggedRect(_selectionStart, _selectionEnd);
+            color.a = .25f;
+            EditorGUI.DrawRect(draggedRect, color);
+        }
+    }
     private void InputCanvasKeyCode() // 키 관련
     {
         if (Event.current.type != EventType.KeyDown)
@@ -456,27 +546,25 @@ public class DrawingWindow : EditorWindow
         if ( Event.current.keyCode == KeyCode.Q)
         {
             EditMode = E_EditMode.Move;
-            Repaint();
             Event.current.Use();
         }
         else if (Event.current.keyCode == KeyCode.W)
         {
             EditMode = E_EditMode.Select;
-            Repaint();
             Event.current.Use();
         }
         else if (Event.current.keyCode == KeyCode.E)
         {
             EditMode = E_EditMode.Paint;
-            Repaint();
             Event.current.Use();
         }
         else if (Event.current.keyCode == KeyCode.R)
         {
             EditMode = E_EditMode.Erase;
-            Repaint();
             Event.current.Use();
         }
+
+        Repaint();
     }
     private void InputCanvasWheel(Rect canvasRect) //휠 관련
     {

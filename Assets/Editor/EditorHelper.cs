@@ -111,7 +111,9 @@ public class EditorHelper
         GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
         labelStyle.alignment = TextAnchor.MiddleCenter;
         labelStyle.contentOffset = new Vector2(1.04f, 1.04f);
-        labelStyle.fontSize = (int)Mathf.Lerp(10f, 30f, value);
+        //labelStyle.fontSize = (int)Mathf.Lerp(1f, 10f, value);
+        labelStyle.fontSize = (int)value * 4;
+
         labelStyle.fontStyle = FontStyle.Bold;
         labelStyle.normal.background = Resources.Load<Texture2D>("Textures/Icon/BrushScaleIcon");
 
@@ -119,7 +121,7 @@ public class EditorHelper
     }
     public static GUIStyle ToggleTabStyle()
     {
-        // GUI 胶鸥老 按眉 积己
+
         GUIStyle toggleStyle = new GUIStyle(GUI.skin.toggle);
         toggleStyle.fixedWidth = 40;
         toggleStyle.fixedHeight = 40;
@@ -245,5 +247,12 @@ public class EditorHelper
     {
         return EditorGUIUtility.TrIconContent(name , tooltip);
     }
+
+    public static Rect GetDraggedRect(Vector2 start , Vector2 end)
+    {
+        return new Rect(Mathf.Min(start.x, end.x), Mathf.Min(start.y, end.y), Mathf.Abs(start.x - end.x), Mathf.Abs(start.y - end.y));
+
+    }
+
 #endif
 }

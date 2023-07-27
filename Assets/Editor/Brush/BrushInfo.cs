@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 public class BrushInfo :  InfoData<BrushInfoData>
 {
-    public static GameObject CurrentBrush { get => ED.SelectedBrushes[ED.GetSelectedBrushId()].TargetObj; }
+    public static GameObject CurrentBrush { get => ED.TypeBrushes[ED.GetTypeBrushId()].TargetObj; }
 
     public static void ClearHandler()
     {
@@ -14,15 +14,15 @@ public class BrushInfo :  InfoData<BrushInfoData>
     }
     public static void DrawGridBrush(Vector2 slotSize)
     {
-        if (ED == null && ED.SelectedBrushes.Count == 0)
+        if (ED == null && ED.TypeBrushes.Count == 0)
             return;
 
-        int selectedBrushId = ED.GetSelectedBrushId();
+        int selectedBrushId = ED.GetTypeBrushId();
         selectedBrushId = selectedBrushId == -1 ? 0 : selectedBrushId;
  
-        EditorHelper.DrawGridBrushItems( 5, ED.SelectedBrushes.Count, (idx) =>
+        EditorHelper.DrawGridBrushItems( 5, ED.TypeBrushes.Count, (idx) =>
         {
-            bool selected = DrawGridBrushItems(slotSize, selectedBrushId == idx, ED.SelectedBrushes[idx]);
+            bool selected = DrawGridBrushItems(slotSize, selectedBrushId == idx, ED.TypeBrushes[idx]);
 
             if (selected)
             {
@@ -30,7 +30,7 @@ public class BrushInfo :  InfoData<BrushInfoData>
             }
         });
 
-        ED.SetSelectedBrushById(selectedBrushId);
+        ED.SetTypeBrushById(selectedBrushId);
     }
     private static bool DrawGridBrushItems(Vector2 slotSize, bool isSelected, DrawingBrush item)
     {
@@ -67,7 +67,7 @@ public class BrushInfo :  InfoData<BrushInfoData>
 
             brushObj.transform.SetParent(gameLayer.transform);
             GameBrush newBrush = brushObj.GetOrAddComponent<GameBrush>();
-            newBrush.Initialize(newBrushId, ED.GetSelectedBrushId(), gameLayer.Id , ED, CurrentBrush);
+            newBrush.Initialize(newBrushId, ED.GetTypeBrushId(), gameLayer.Id , ED, CurrentBrush);
 
             ED.BrushObjects.Add(newBrushId, newBrush);
 
@@ -79,7 +79,7 @@ public class BrushInfo :  InfoData<BrushInfoData>
     public static void PaintBrush(DataBrush brush)
     {
         Vector3 newPos = new Vector3(brush.PosX, brush.PosY, brush.PosZ);
-        GameObject selectedBrush = ED.SelectedBrushes[brush.TypeId].TargetObj;
+        GameObject selectedBrush = ED.TypeBrushes[brush.TypeId].TargetObj;
 
         GameObject brushObj = GameObject.Instantiate(selectedBrush, newPos, Quaternion.identity) as GameObject;
         GameLayer gameLayer = LayerInfo.ED.LayerObjects[brush.ParentLayer];
@@ -117,4 +117,14 @@ public class BrushInfo :  InfoData<BrushInfoData>
         }
     }
 
+    public static void ClearAllSelectedBrush()
+    {
+        if (LayerInfo.ED.LayerObjects.Count == 0 || LayerInfo.ED.SelectedLayerIds.Any() == false)
+            return;
+
+        foreach(var brushes in ED.BrushObjects)
+        {
+            brushes.Value.IsSelected = false;
+        }
+    }
 }
